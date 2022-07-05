@@ -1,0 +1,93 @@
+﻿@using System.Xml;
+
+@{
+    KPIxml xml = new KPIxml();
+
+    //top Proposals
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    XmlNodeList tableRows = data.SelectNodes("/kpidata/row[@DataType='tableData' and @KPIKey='TP' and @RowKey='1']");
+}
+
+<div id="landing">
+
+    @*<div class="col-lg-6 col-md-6 col-sm-12">
+        <div class="panel-body">
+            <div class="widget-panel widget-style-1 bg-inverse " onclick="GoToKPI('portlet-client','kpiDetail1')">
+                <i class="ion-funnel"></i>
+                <h2 id="ss_pipeline" class="m-0 counter"></h2>
+                <div>
+                    <a id="headlines-kpi-title" href="javascript:GoToKPI('portlet-client','kpiDetail1')">Pipeline</a>
+                </div>
+            </div>
+
+            <div class="widget-panel widget-style-1 bg-inverse " onclick="GoToKPI('portlet-client','kpiDetail2')">
+                <i class="ion-stats-bars"></i>
+
+                <h2 id="ss_aot" class="m-0 counter"></h2>
+                <div><a id="headlines-kpi-title" href="javascript:GoToKPI('portlet-client','kpiDetail2')">AOT</a></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 col-sm-12">
+
+        <div class="panel-body">
+            <div class="widget-panel widget-style-1 bg-primary " onclick="GoToKPI('portlet-people', 'kpiDetail10')">
+                <i id="group-icon"></i>
+                <h2 id="ss_empturnover" class="m-0 counter"></h2>
+                <div><a id="headlines-kpi-title" href="javascript:GoToKPI('portlet-people','kpiDetail10')">Employee Turnover</a></div>
+            </div>
+
+            <div class="widget-panel widget-style-1 bg-primary " onclick="GoToKPI('portlet-people', 'kpiDetail8')">
+                <i class="ion-clock"></i>
+                <h2 id="ss_chargeability" class="m-0 counter"></h2>
+                <div><a id="headlines-kpi-title" href="javascript:GoToKPI('portlet-people','kpiDetail8')">Chargeability</a></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 col-sm-12">
+
+        <div class="panel-body">
+
+            <div class="widget-panel widget-style-1 bg-inverse" onclick="GoToKPI('portlet-client', 'kpiDetail15')">
+                <i class="ion-checkmark"></i>
+                <h2 id="ss_csm" class="m-0 counter"></h2>
+                <div><a id="headlines-kpi-title" href="javascript:GoToKPI('portlet-client','kpi611_detail')">CSM Score</a></div>
+            </div>
+
+
+            <div class="widget-panel widget-style-1 bg-info " onclick="GoToKPI('portlet-finance','kpiDetail14')">
+                <i class="ion-pie-graph"></i>
+                <h2 id="ss_opbbgc" class="m-0 counter"><span class="fa fa-circle-o-notch fa-spin"></span></h2>
+                <div><a id="headlines-kpi-title" href="javascript:GoToKPI('portlet-finance','kpiDetail14')">OPBBGC %</a></div>
+            </div>
+        </div>
+    </div>*@
+
+    @if (tableRows != null)
+    { //we have top proposal records to show
+        <div id="top-proposals" class="col-lg-6 col-md-6 col-sm-12">
+            <div class="panel panel-color panel-muted">
+                <div class="panel-heading">
+                    <h3 class="panel-title text-inverse text-center">Top Pitches</h3>
+                </div>
+                <div id="tp-panel-body" class="panel-body p-0">
+                    <table class="table table-hover dashboard-table">
+                        @foreach (XmlNode row in tableRows)
+                        {
+                            <tr>
+                                <td class="descriptionRow text-inverse" title="@db.AttributeIsNull(row,"string","")">@db.AttributeIsNull(row, "RowDescription", "")</td>
+                                <td class="amount  text-inverse"><strong>@db.AttributeIsNull(row, "Col1", "")</strong></td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    }
+
+</div>

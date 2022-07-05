@@ -1,0 +1,237 @@
+﻿@{
+    Session["impersonation"] = null; //used while an admin runs the 'View As' feature
+    //prevent access to non-admin users
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+    var userID = Request["userId"];
+    //user admin page help (key: 1112)
+    var helpKey = "1112";
+    var help = db.UI_HelpContent_Get(helpKey);
+
+    var helpKey_viewas = "1142";
+    var help_viewas = db.UI_HelpContent_Get(helpKey_viewas);
+
+    var helpKey_usersetup = "1143";
+    var help_usersetup = db.UI_HelpContent_Get(helpKey_usersetup);
+
+    var helpKey_stats = "1144";
+    var help_stats = db.UI_HelpContent_Get(helpKey_stats);
+
+    string userKey = db.GetUserKey();
+}
+
+<head>
+<script src="/js/jquery-1.12.4.js"></script>
+<script src="/js/jquery-ui.js"></script>
+<link href="/css/jquery-ui.min.css" rel="stylesheet">
+<link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+<link href="/css/bootstrap-reset.css" rel="stylesheet">
+<link href="/css/admin.css" rel="stylesheet">
+<link href="/css/dashboard.css?random=10" rel="stylesheet">
+<link href="/assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div class="container-fluid">
+        <!-- Static navbar -->
+        <nav class="navbar navbar-default navbar-fixed-top" id="dashboardNavBar">
+            <div class="container-fluid">
+                <!--Navbar Header Hamburger-->
+                <div class="navbar-header">
+                    <img src="~/img/icon-16x6-spc-0.gif" style="float:left;margin-top:13px;margin-left:5px;width:25px; height:25px;" />
+                    <a class="navbar-brand" href="/index.cshtml">
+                        <span>
+                            <strong>User Admin Page</strong>
+                        </span>
+                    </a>
+                    <section class="navbar-form navbar-left">
+                        <form id="frmUser" action="" method="post">
+                            <div id="searchForUser">
+                                <!--Autocomplete Search input-->
+                                <input id="userID" class="form-control" name="userID" type="text" value="@userID" placeholder="Search for a user ID" />
+                            </div>
+                        </form>
+                    </section>
+                    <span class="dropdown navbar-right" style="margin-left:4px">
+                        <button class="btn btn-admin dropdown-toggle" type="button" data-toggle="dropdown">
+                            Reports
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="../logs/Errors_Javascript.cshtml" target="_blank" title="Client errors">Client Errors</a></li>
+                            <li><a href="/Elmah.axd" target="_blank" title="Server errors">Server Errors</a></li>
+                            <li><a href="UserSetup.cshtml" target="_blank" title="User Setup">User Setup</a></li>
+                            <li><a href="SecurityReport.cshtml" target="_blank" title="Users Security Report">Security Report</a></li>
+                            <li><a href="UsersByTreeNode.cshtml" target="_blank" title="Users By Tree Node">Users By Tree Node</a></li>
+                            <li><a href="../logs/DBLog.cshtml" target="_blank" title="Dashboard usage Statistics">Stats</a></li>
+                            <li><a href="../logs/DashboardUsageLog.cshtml" target="_blank" title="Dashboard usage Statistics">Dashboard Usage</a></li>
+                            <li><a href="../logs/ActivityLogStats.cshtml" target="_blank" title="Dashboard usage Statistics">Activity Stats</a></li>
+                        </ul>
+                    </span>
+                    <span class="dropdown navbar-right" style="margin-left:4px">
+                        <button class="btn btn-admin dropdown-toggle" type="button" data-toggle="dropdown">
+                            Help
+                            <span class="caret"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a data-toggle="modal" data-target="#userAdminHelp" title="@help.HelpTitle">Main Help</a></li>
+                            <li><a data-toggle="modal" data-target="#viewAsHelp" title="@help_viewas.HelpTitle">View As Feature</a></li>
+                            <li><a data-toggle="modal" data-target="#userSetupHelp" title="@help_usersetup.HelpTitle">User Setup Tools</a></li>
+                            <li><a data-toggle="modal" data-target="#statsHelp" title="@help_stats.HelpTitle">Stats</a></li>
+                        </ul>
+                    </span>
+                    <span class="navbar-right">
+                        <button type="button" id="btnGetUser" class="btn-admin btn">Get User</button>
+                        <button type="button" id="btnRefresh" class="btn-admin btn">Refresh</button>
+                    </span>
+                </div>
+            </div><!--/.container-fluid -->
+        </nav>
+
+        <div class="modal fade" id="userAdminHelp" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-help modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header modalHeaderText clientBgColor">
+                        <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title help-title">@help.HelpTitle</h4>
+                    </div>
+                    <div class="modal-body">
+                        @Html.Raw(help.HelpContentHTML)
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=@helpKey')">Edit</button>
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="viewAsHelp" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-help modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header modalHeaderText clientBgColor">
+                        <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title help-title">@help_viewas.HelpTitle</h4>
+                    </div>
+                    <div class="modal-body">
+                        @Html.Raw(help_viewas.HelpContentHTML)
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=@helpKey_viewas')">Edit</button>
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="userSetupHelp" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-help modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header modalHeaderText clientBgColor">
+                        <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title help-title">@help_usersetup.HelpTitle</h4>
+                    </div>
+                    <div class="modal-body">
+                        @Html.Raw(help_usersetup.HelpContentHTML)
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=@helpKey_usersetup')">Edit</button>
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="statsHelp" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+            <div class="modal-help modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header modalHeaderText clientBgColor">
+                        <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title help-title">@help_stats.HelpTitle</h4>
+                    </div>
+                    <div class="modal-body">
+                        @Html.Raw(help_stats.HelpContentHTML)
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=@helpKey_stats')">Edit</button>
+                        <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <table id="setup" class="table table-hover table-bordered  dashboard-table" style="font-size:10pt">
+    </table>
+
+        <div id="container">
+            <!--div to hold form for change of a user Name-->
+            <div id="editUser" class="col-md-6"></div>
+
+            <!--div to hold the user's roles-->
+            <div id="userStats" class="col-md-6"></div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    var Url = "";
+    $(document).ready(function () {
+        $("#editUser").hide(); //don't display the editUser data unless there is a user selected
+        $("#editUserRoles").hide(); //don't display the editUserRoles data unless there is a user selected
+        $("#btnRefresh").hide(); //don't display the btnRefresh  unless there is a user selected
+        $("#btnSave").hide(); //don't display the btnRefresh  unless there is a user selected
+        $(".button").button(); //buttons styling
+
+        //get the user record selected by the admin user
+        $("#btnGetUser, #btnRefresh").click(
+            function (e) {
+                e.preventDefault();
+                $("#editUser, #userStats").html("<h1 class='loading'>Loading...</h1><i class='fa fa-spinner fa-pulse fa-3x fa-fw loading-spinner'></i>");
+                $("#setup").html("");
+                var userID = $("#userID").val().toString();
+
+                ////add Page Header with the name of the User
+                //var userNameHeaderUrl = "../Methods/getObjectName?objectType=User&" + "objectID=" + userID;
+                //$("#recordTitle").load(userNameHeaderUrl);
+
+                //load the Edit user name form
+                Url = "EditUser?userId=" + userID;
+                $("#editUser").load(Url).show();
+
+                //load the User stats
+                Url = "UserStats?userId=" + userID;
+                $("#userStats").load(Url).show();
+
+                //load the User stats
+                Url = "UserComment?userId=" + userID;
+                $("#setup").load(Url).show();
+
+                $("#btnRefresh").show();
+                $("#btnSave").show();
+            }
+        );
+
+        //autocomplete
+        var Url = '../GetUsers';
+        $("#userID").autocomplete({ minLength: '3', source: Url });
+
+        if ($("#userID").val().toString() != '') { $("#btnGetUser").trigger('click') }
+    });
+
+</script>
+
+<script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->

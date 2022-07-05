@@ -1,0 +1,89 @@
+﻿.dashboard-table{
+ margin-top: 10px;
+text-align:right;
+}
+
+.dashboard-table th{
+
+    text-align:right;
+}
+
+.dropdownArrow{
+    font-size:8px !important;   /*This is the drop down arrow on nav menu items. Overrides bootstrap default of 15px
+                                    Not using caret because it doesn't show up on ipad*/
+}
+
+
+/*this overrides bootstrap default of 10px*/
+.table thead > tr > th, .table tbody > tr > th, .table tfoot > tr > th, .table thead > tr > td, .table tbody > tr > td, .table tfoot > tr > td {
+    padding: 5px;
+}
+
+.subTotalRow{
+
+    font-weight:700;
+}
+
+.descriptionRow{
+    text-align:left !important;
+}
+
+.kpiTitle {
+    font-weight:700;
+    
+}
+.kpiValue{
+    font-size:14px;
+    font-weight:700;
+}
+
+.kpiGrowth{
+    margin-left:10px;
+    font-size:14px;
+    font-weight:700;
+}
+
+
+.kpiGreen{
+   
+    color:forestgreen;
+
+}
+
+.kpiRed{
+   
+    color:red;
+}
+
+.kpiYellow{
+   
+    color:#f1be48;
+}
+
+.kpiGrey{
+
+    color:#c8c9c7;
+}
+
+.kpiWhite{
+
+    color:white;
+}
+
+.expcol {
+
+    font-size:26px;
+    margin-left:3px;
+    color:#1b365d;
+    cursor:pointer;
+}
+
+.padding{
+    padding-left:10px;
+    padding-right:10px;
+}
+
+
+.text-20{
+    font-size:20px !important;
+}

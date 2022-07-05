@@ -1,0 +1,20 @@
+﻿@using System.Configuration;
+
+@{
+    String server = ConfigurationManager.AppSettings["LocalServerName"].ToString();
+
+    List<string> kpis = new List<string>(new string[] { "TP", "61", "62", "66", "63", "65", "67", "69", "610", "611", "612", "71", "72", "73", "74", "81", "91" });
+    string userKey = db.GetUserKey();
+    dynamic data = db.UI_Data_GetAll(userKey);
+    pdfGenerator pdf = new pdfGenerator(kpis, data, userKey, server);
+    byte[] pdfBytes = pdf.retrieveBytes();
+    HttpResponseBase response = Request.RequestContext.HttpContext.Response;
+    response.Cache.SetCacheability(HttpCacheability.NoCache);
+    response.ClearHeaders();
+    response.ContentType = "application/pdf";
+    response.AddHeader("Content-Disposition",
+    "attachment;filename=\"BI Business Dashboard.pdf\"");
+    response.BinaryWrite(pdfBytes);
+    response.Flush();
+    response.End();
+}

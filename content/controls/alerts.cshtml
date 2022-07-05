@@ -1,0 +1,105 @@
+﻿@using System.Xml;
+
+@{
+    // get all alerts
+
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    XmlNodeList alerts = data.SelectNodes("/kpidata/row[@DataType='Alerts']");
+
+
+    // variables used for building li elements
+    var message = "";
+    var icon = "";
+    var link_url = "";
+    var alertKey = "";
+    var alertCount = "";
+
+}
+
+<li class="dropdown">
+    <a id="notifications-badge" data-toggle="dropdown" class="dropdown-toggle" href="#" title="You have no alerts">
+        <i class="fa fa-bell-o"></i>
+        <span class="badge badge-sm up bg-warning count">0</span>
+    </a>
+    <ul id="notifications-list" class="dropdown-menu extended nicescroll" tabindex="5002">
+        <li class="noti-header">
+            <p>BI Business Dashboard Alerts</p>
+        </li>
+        @foreach(XmlNode alert in alerts)
+        {
+            link_url = db.AttributeIsNull(alert,"Link_URL","");
+            alertKey = db.AttributeIsNull(alert,"KPIKey","");
+            alertCount = db.AttributeIsNull(alert,"Value","");
+
+            if (alertKey == "1" || alertKey == "2")
+            {
+                icon = "fa-clock-o text-primary";
+                if (alertKey == "1" )
+                {
+                    if (alertCount == "1")
+                    {
+                        message = "There is one pitch in Opportunity or in Proposal stage due this month.";
+                    } else
+                    {
+                        message = "There are " + alertCount + " pitches in Opportunity or in Proposal stage due this month.";
+                    }
+                } else if (alertKey == "2")
+                {
+                    if (alertCount == "1")
+                    {
+                        message = "There is one active job with negative analytical OPBBGC% LTD";
+                    }
+                    else
+                    {
+                        message = "There are " + alertCount + " active jobs with negative analytical OPBBGC% LTD";
+                    }
+                }
+            }
+            else
+            {
+                icon = "fa-exclamation text-warning";
+                if (alertKey == "3")
+                {
+                    if (alertCount == "1")
+                    {
+                        message = "There is one external CSM red alert this month";
+                    }
+                    else
+                    {
+                        message = "There are " + alertCount + " external CSM red alerts this month";
+                    }
+                }
+                else if (alertKey == "4")
+                {
+                    if (alertCount == "1")
+                    {
+                        message = "There is one closed job this year that has a significant variance between forecasted and actual professional time hours spent on the jobs";
+                    }
+                    else
+                    {
+                        message = "There are " + alertCount + " closed jobs this year that have a significant variance between forecasted and actual professional time hours spent on the jobs";
+                    }
+                }
+                else if (alertKey == "5")
+                {
+                    if (alertCount == "1")
+                    {
+                        message = "There is one internal CSM to CS red alert this month";
+                    }
+                    else
+                    {
+                        message = "There are " + alertCount + " internal CSM to CS red alerts this month";
+                    }
+                }
+            }
+        <li>
+            <a href="@link_url" target="_blank">
+                <span class="pull-left"><i class="fa @icon"></i></span>
+                <span style="white-space:normal !important;display: inline-block;padding-right: 30px;">@message<br></span>
+            </a>
+        </li>
+        }
+    </ul>
+</li>
+

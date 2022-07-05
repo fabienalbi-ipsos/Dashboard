@@ -1,0 +1,1102 @@
+﻿@using System.Xml;
+
+@{
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    //CSM
+    //keys used for retrieving content from database. Will be updated below from the database call
+    var reportKey = "611"; //CSM1
+
+    XmlNode userNode = data.SelectSingleNode("/kpidata/row[@DataType='UserRecord']");
+
+    var isAdmin = false;
+    var hasChart = false;
+    if (db.AttributeIsNull(userNode, "role", "") == "Admin") { isAdmin = true; }
+
+    //Linked Reports
+    var t1haslinkedReports = false;
+    if (data.SelectNodes("/kpidata/row[@KPIKey='" + reportKey + "' and @DataType='LinkedReports']").Count != 0)
+    {
+        t1haslinkedReports = true;
+    }
+
+
+    //kpi section title drop down bar
+    var kpiTitle = "CSM"; //kpiTitle = "CSM"; //hardcoded to group two tables together
+    var t1kpiTitle = "";
+    var kpiValue = "";
+    var kpiChange = "";
+    var kpiColor = "";
+    var kpiSection = "client";
+
+
+    //Help
+    var helpKey = "";
+
+    var HelpTitle = "";
+
+    //KPI table #1 CSM1
+    #region table1
+    var t1hasData = false;
+    if (data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='11']") != null)
+    {
+        t1hasData = true;
+    }
+    string tableTitle = "eCSM"; //set to a unique value when two tables on the same page
+    string col1Title = "", col1TitleText = "", col1TitleClass = "";
+    string col2Title = "", col2TitleText = "", col2TitleClass = "";
+    string col3Title = "", col3TitleText = "", col3TitleClass = "";
+    string col4Title = "", col4TitleText = "", col4TitleClass = "";
+    string col5Title = "", col5TitleText = "", col5TitleClass = "";
+    string col6Title = "", col6TitleText = "", col6TitleClass = "";
+    string col7Title = "", col7TitleText = "", col7TitleClass = "";
+
+    //the name used for the Linked Reports Drop down
+    var linkedReportsName = "";
+    var KPIKey = "";
+    var chartKey = "";
+    var chartKeyPie = "6110";
+    var chartKeyRed = "6111";
+
+    //IDs used for divs and other html elements. will be updated below with key values
+    var kpiDetailDiv = "kpiDetail";
+    var kpiHelpDiv = "kpiHelp";
+    var chartDiv = "chart";
+    var chartDataTable = "chartData";
+    var chartDivPie = "chart" + chartKeyPie;
+    var chartDataTablePie = "chartData" + chartKeyPie;
+    var chartDivRed = "chart" + chartKeyRed;
+    var chartDataTableRed = "chartData" + chartKeyRed;
+
+    //get specifics rows
+    XmlNode titlebarnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='100']");
+    XmlNode kpikeynode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='103']");
+    XmlNode chartnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @DataType='ChartTitles']");
+    XmlNode helpnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='101']");
+    XmlNode linkedreportsnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='102']");
+
+    var col1node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='200']");
+    var col2node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='201']");
+    var col3node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='202']");
+    var col4node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='203']");
+    var col5node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='204']");
+    var col6node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='205']");
+    var col7node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + reportKey + "' and @RowKey='206']");
+
+    if (titlebarnode != null)
+    {
+        kpiValue = db.AttributeIsNull(titlebarnode, "Col1", "");
+        kpiChange = db.AttributeIsNull(titlebarnode, "Col2", "");
+        kpiColor = db.AttributeIsNull(titlebarnode, "KPIColor", "");
+        t1kpiTitle = db.AttributeIsNull(titlebarnode, "RowDescription", "");
+    }
+
+    if (helpnode != null)
+    {   //Help Key
+        helpKey = db.AttributeIsNull(helpnode, "RowDescription", "");
+        HelpTitle = db.AttributeIsNull(helpnode, "Title", "");
+    }
+
+    if (linkedreportsnode != null)
+    {   //Linked Reports Name
+        linkedReportsName = db.AttributeIsNull(linkedreportsnode, "RowDescription", "");
+    }
+
+    if (kpikeynode != null)
+    {   //KPI Key
+        KPIKey = db.AttributeIsNull(kpikeynode, "RowDescription", "");
+        kpiDetailDiv += KPIKey;
+        kpiHelpDiv += KPIKey;
+    }
+
+    if (chartnode != null)
+    {   //Chart Key
+        chartKey = db.AttributeIsNull(chartnode, "KPIKey", "");
+        chartDiv += chartKey;
+        chartDataTable += chartKey;
+        hasChart = true;
+    }
+
+    if (col1node != null)
+    {   //Col 1 title
+        col1Title = db.AttributeIsNull(col1node, "RowDescription", "");
+        col1TitleText = db.AttributeIsNull(col1node, "string", "");
+        col1TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col1node, "HideOnMobile", "") == "1")
+        {
+            col1TitleClass += " hidden-xs";
+        }
+    }
+
+    if (col2node != null)
+    {   //Col 2 title
+        col2Title = db.AttributeIsNull(col2node, "RowDescription", "");
+        col2TitleText = db.AttributeIsNull(col2node, "string", "");
+        col2TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col2node, "HideOnMobile", "") == "1")
+        {
+            col2TitleClass += " hidden-xs";
+        }
+    }
+
+    if (col3node != null)
+    {   //Col 3 title
+        col3Title = db.AttributeIsNull(col3node, "RowDescription", "");
+        col3TitleText = db.AttributeIsNull(col3node, "string", "");
+        col3TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col3node, "HideOnMobile", "") == "1")
+        {
+            col3TitleClass += " hidden-xs";
+        }
+
+    }
+
+    if (col4node != null)
+    {   //Col 4 title
+        col4Title = db.AttributeIsNull(col4node, "RowDescription", "");
+        col4TitleText = db.AttributeIsNull(col4node, "string", "");
+        col4TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col4node, "HideOnMobile", "") == "1")
+        {
+            col4TitleClass += " hidden-xs";
+        }
+    }
+
+    if (col5node != null)
+    {   //Col 5 title
+        col5Title = db.AttributeIsNull(col5node, "RowDescription", "");
+        col5TitleText = db.AttributeIsNull(col5node, "string", "");
+        col5TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col5node, "HideOnMobile", "") == "1")
+        {
+            col5TitleClass += " hidden-xs";
+        }
+    }
+
+    if (col6node != null)
+    {   //Col 6 title
+        col6Title = db.AttributeIsNull(col6node, "RowDescription", "");
+        col6TitleText = db.AttributeIsNull(col6node, "string", "");
+        col6TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col6node, "HideOnMobile", "") == "1")
+        {
+            col6TitleClass += " hidden-xs";
+        }
+    }
+
+    if (col7node != null)
+    {   //Col 7 title
+        col7Title = db.AttributeIsNull(col7node, "RowDescription", "");
+        col7TitleText = db.AttributeIsNull(col7node, "string", "");
+        col7TitleClass = "columnTitle";
+        if (db.AttributeIsNull(col7node, "HideOnMobile", "") == "1")
+        {
+            col7TitleClass += " hidden-xs";
+        }
+    }
+    #endregion
+
+    //KPI table #2 Internal CSM
+    #region table2
+    var t2hasChart = false;
+
+    string t2tableTitle = "iCSM to CS"; //set to a unique value when two tables on the same page
+    string t2col1Title = "", t2col1TitleText = "", t2col1TitleClass = "";
+    string t2col2Title = "", t2col2TitleText = "", t2col2TitleClass = "";
+    string t2col3Title = "", t2col3TitleText = "", t2col3TitleClass = "";
+    string t2col4Title = "", t2col4TitleText = "", t2col4TitleClass = "";
+    string t2col5Title = "", t2col5TitleText = "", t2col5TitleClass = "";
+    string t2col6Title = "", t2col6TitleText = "", t2col6TitleClass = "";
+    string t2col7Title = "", t2col7TitleText = "", t2col7TitleClass = "";
+
+    //the name used for the Linked Reports Drop down
+    var t2linkedReportsName = "";
+
+    //keys used for retrieving content from database. Will be updated below from the database call
+    var t2reportKey = "612"; //CSM2
+    var t2helpKey = "";
+    var t2HelpTitle = "";
+    var t2KPIKey = "";
+    var t2chartKey = "";
+    var t2chartKeyPie = "6120";
+    var t2chartKeyRed = "6121";
+
+    //IDs used for divs and other html elements. will be updated below with key values
+    var t2kpiDetailDiv = "kpiDetail";
+    var t2kpiHelpDiv = "kpiHelp";
+    var t2chartDiv = "chart";
+    var t2chartDataTable = "chartData";
+    var t2chartDivPie = "chart" + t2chartKeyPie;
+    var t2chartDataTablePie = "chartData" + t2chartKeyPie;
+    var t2chartDivRed = "chart" + t2chartKeyRed;
+    var t2chartDataTableRed = "chartData" + t2chartKeyRed;
+
+    var t2hasData = false;
+    if (data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='11']") != null)
+    {
+        t2hasData = true;
+    }
+
+    //get specifics rows
+    XmlNode t2titlebarnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='100']");
+    XmlNode t2kpikeynode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='103']");
+    XmlNode t2chartnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @DataType='ChartTitles']");
+    XmlNode t2helpnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='101']");
+    XmlNode t2linkedreportsnode = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='102']");
+
+    var t2col1node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='200']");
+    var t2col2node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='201']");
+    var t2col3node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='202']");
+    var t2col4node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='203']");
+    var t2col5node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='204']");
+    var t2col6node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='205']");
+    var t2col7node = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2reportKey + "' and @RowKey='206']");
+
+    if (kpiValue == "-" || kpiValue == "")
+    {
+        kpiValue = db.AttributeIsNull(t2titlebarnode, "Col1", "");
+        kpiChange = db.AttributeIsNull(t2titlebarnode, "Col2", "");
+        kpiColor = db.AttributeIsNull(t2titlebarnode, "KPIColor", "");
+    }
+
+    if (t2helpnode != null)
+    {   //Help Key
+        t2helpKey = db.AttributeIsNull(t2helpnode, "RowDescription", "");
+        t2HelpTitle = db.AttributeIsNull(t2helpnode, "Title", "");
+    }
+
+    if (t2linkedreportsnode != null)
+    {   //Linked Reports Name
+        t2linkedReportsName = db.AttributeIsNull(t2linkedreportsnode, "RowDescription", "");
+    }
+
+    //Linked Reports
+    var t2haslinkedReports = false;
+    if (data.SelectNodes("/kpidata/row[@KPIKey='" + t2reportKey + "' and @DataType='LinkedReports']") != null)
+    {
+        t2haslinkedReports = true;
+    }
+
+    if (t2kpikeynode != null)
+    {   //KPI Key
+        t2KPIKey = db.AttributeIsNull(t2kpikeynode, "RowDescription", "");
+        t2kpiDetailDiv += t2KPIKey;
+        t2kpiHelpDiv += t2KPIKey;
+    }
+
+
+    if (t2chartnode != null)
+    {   //Chart Key
+        t2chartKey = db.AttributeIsNull(t2chartnode, "KPIKey", "");
+        t2chartDiv += t2chartKey;
+        t2chartDataTable += t2chartKey;
+        t2hasChart = true;
+    }
+
+    if (t2col1node != null)
+    {   //Col 1 title
+        t2col1Title = db.AttributeIsNull(t2col1node, "RowDescription", "");
+        t2col1TitleText = db.AttributeIsNull(t2col1node, "string", "");
+        t2col1TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col1node, "HideOnMobile", "") == "1")
+        {
+            t2col1TitleClass += " hidden-xs";
+        }
+    }
+
+    if (t2col2node != null)
+    {   //Col 2 title
+        t2col2Title = db.AttributeIsNull(t2col2node, "RowDescription", "");
+        t2col2TitleText = db.AttributeIsNull(t2col2node, "string", "");
+        t2col2TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col2node, "HideOnMobile", "") == "1")
+        {
+            t2col2TitleClass += " hidden-xs";
+        }
+    }
+
+    if (t2col3node != null)
+    {   //Col 3 title
+        t2col3Title = db.AttributeIsNull(t2col3node, "RowDescription", "");
+        t2col3TitleText = db.AttributeIsNull(t2col3node, "string", "");
+        t2col3TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col3node, "HideOnMobile", "") == "1")
+        {
+            t2col3TitleClass += " hidden-xs";
+        }
+
+    }
+
+    if (t2col4node != null)
+    {   //Col 4 title
+        t2col4Title = db.AttributeIsNull(t2col4node, "RowDescription", "");
+        t2col4TitleText = db.AttributeIsNull(t2col4node, "string", "");
+        t2col4TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col4node, "HideOnMobile", "") == "1")
+        {
+            t2col4TitleClass += " hidden-xs";
+        }
+    }
+
+    if (t2col5node != null)
+    {   //Col 5 title
+        t2col5Title = db.AttributeIsNull(t2col5node, "RowDescription", "");
+        t2col5TitleText = db.AttributeIsNull(t2col5node, "string", "");
+        t2col5TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col5node, "HideOnMobile", "") == "1")
+        {
+            t2col5TitleClass += " hidden-xs";
+        }
+    }
+
+    if (t2col6node != null)
+    {   //Col 6 title
+        t2col6Title = db.AttributeIsNull(t2col6node, "RowDescription", "");
+        t2col6TitleText = db.AttributeIsNull(t2col6node, "string", "");
+        t2col6TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col6node, "HideOnMobile", "") == "1")
+        {
+            t2col6TitleClass += " hidden-xs";
+        }
+    }
+
+    if (t2col7node != null)
+    {   //Col 7 title
+        t2col7Title = db.AttributeIsNull(t2col7node, "RowDescription", "");
+        t2col7TitleText = db.AttributeIsNull(t2col7node, "string", "");
+        t2col7TitleClass = "columnTitle";
+        if (db.AttributeIsNull(t2col7node, "HideOnMobile", "") == "1")
+        {
+            t2col7TitleClass += " hidden-xs";
+        }
+    }
+
+    #endregion
+}
+
+<div class="col-lg-8 col-md-12 col-sm-12">
+    <div class="portlet">
+        <!--KPI Title bar-->
+        <div class="portlet-heading bg-muted enabled" data-toggle="collapse" data-parent="#accordion1" href="#@kpiDetailDiv">
+            <h3 class="portlet-title">
+                <a class="kpiTitle" data-toggle="collapse" data-parent="#accordion1" href="#@kpiDetailDiv"><span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span><span class="padding">@kpiTitle</span></a>
+            </h3>
+            <div class="portlet-widgets">
+                <span id="ss_@kpiDetailDiv" class="kpiValue">@kpiValue</span>
+                <span id="growth_@kpiDetailDiv" class="kpiGrowth">@kpiChange</span>
+                @if (kpiColor == "")
+                {
+                    <span id="light_@kpiDetailDiv" class="fa fa-circle kpiGrey" style="font-size:16px;margin-left:5px;"></span>
+                }
+                else
+                {
+                    <span id="light_@kpiDetailDiv" class="fa fa-circle @kpiColor" style="font-size:16px;margin-left:5px;"></span>
+                }
+            </div>
+            <div class="clearfix"></div>
+
+        </div>
+
+        <!--KPI Table-->
+        <div id="@kpiDetailDiv" class="panel-collapse collapse">
+
+            @if (t1hasData == true)
+            {
+                <!--table 1-->
+                <table class="table table-hover table-bordered dashboard-table">
+
+                    <!--column titles-->
+                    @{
+                        <thead>
+                            <tr data-width="295">
+                                <th style="text-align:center">
+                                    <!-- Help Button -->
+                                    <span data-toggle="modal" data-target="#@kpiHelpDiv" title="@HelpTitle" class="glyphicon glyphicon-question-sign pull-left text-lg @(kpiSection + "Color")" style="cursor:pointer;"></span>
+                                    
+                                    @tableTitle
+                                </th>
+                                <!-- adds all the kpi's columns with the associated title.-->
+                                <th class="@col1TitleClass" title="@col1TitleText">@col1Title</th>
+                                <th class="@col2TitleClass" title="@col2TitleText">@col2Title</th>
+                                <th class="@col3TitleClass" title="@col3TitleText">@col3Title</th>
+                                <th class="@col4TitleClass" title="@col4TitleText">@col4Title</th>
+                                <th class="@col5TitleClass" title="@col5TitleText">@col5Title</th>
+                                <th class="@col6TitleClass" title="@col6TitleText">@col6Title</th>
+                                <th class="@col7TitleClass" title="@col7TitleText">@col7Title</th>
+                            </tr>
+                        </thead>
+                    }
+
+                    @{
+                        XmlNodeList tableRows = data.SelectNodes("/kpidata/row[@DataType='tableData' and @KPIKey='" + reportKey + "' and @RowKey<100]");
+                        if (tableRows != null)
+                        {
+                            <tbody>
+                                @foreach (XmlNode row in tableRows)
+                                {
+                                    <tr id="row-@db.AttributeIsNull(row, "ID", "")">
+                                        <td class="descriptionRow @db.AttributeIsNull(row, "Class", "")">
+                                            <span class="@db.AttributeIsNull(row, "KPIColor", "") pull-right" style="margin:3px"></span>
+                                            @db.AttributeIsNull(row, "RowDescription", "")
+                                        </td> <!-- adds the row description in the first column-->
+                                        @for (int y = 2; y <= 8; y++) // loop through and adds as many values as there are kpi columns
+                                        {
+                                            <td id="@db.AttributeIsNull(row, "ID", "")-@y.ToString()" class="amount @db.AttributeIsNull(row, "Class", "")">@db.AttributeIsNull(row, "Col" + (y - 1), "")</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    }
+
+                </table>
+
+                <!--More Reports-->
+                        if (t1haslinkedReports == true)
+                        { //we have some linked reports so show the drop down list
+                            XmlNodeList linkedReports = data.SelectNodes("/kpidata/row[@KPIKey='" + reportKey + "' and @DataType='LinkedReports']");
+                            <ul class="nav navbar-nav hidden-xs">
+                                <li class="dropdown text-center" title="Linked Reports here">
+                                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                                        <span class="glyphicon glyphicon-folder-open @(kpiSection + "Color")"></span>
+                                        <span class="padding" style="color:#888b8d;">Linked Reports</span> <span class="glyphicon glyphicon-triangle-bottom dropdownArrow" style="color:#888b8d;"></span>
+                                    </a>
+                                    <ul class="dropdown-menu linkedReports" tabindex="4999">
+                                        @foreach (XmlNode report in linkedReports)
+                                        {
+                                            <li><a id="@db.AttributeIsNull(report, "ID", "")" target="_blank" href="@report.Attributes["Link_URL"].InnerText">@db.AttributeIsNull(report, "RowDescription", "")</a></li>
+                                        }
+                                    </ul>
+                                </li>
+                            </ul>
+                        }
+
+                <!--Chart-->
+                        if (hasChart == true)
+                        {//we have a chart to show
+                           
+            {//we have a chart to show
+
+                XmlNode chartTitlePie = data.SelectSingleNode("/kpidata/row[@KPIKey='" + chartKeyPie + "' and @DataType='ChartTitles']");
+                XmlNodeList seiriesPie = data.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + chartKeyPie + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+                <section>
+                    <!-- hide the show chart button for kpis having more than one chart -->
+                    <button id="btn-@chartDivPie" title="Show/Hide Chart" type="button" class="btn @(kpiSection + "BgColor") pull-right show-chart" onclick="ShowChart('@chartDivPie')"><span class="fa fa-bar-chart padding text-white" aria-hidden="true"></span></button>
+                    <div class="clearfix"></div>
+                    <!--chart container-->
+                    <div class="chart chartBig col-sm-5" id="@chartDivPie"></div>
+
+                    <!--chart data table container-->
+                    <div class="hidden">
+                        <table id="@chartDataTablePie" class="chartDataTable">
+                            <tr>
+                                <th class="chartProperties"
+                                    data-charttitle="@db.AttributeIsNull(chartTitlePie,"Title","")"
+                                    data-subtitle="@db.AttributeIsNull(chartTitlePie,"SubTitle","")"
+                                    data-fontweight="@db.AttributeIsNull(chartTitlePie,"FontWeight","")"
+                                    data-fontsize="@db.AttributeIsNull(chartTitlePie,"FontSize","")"
+                                    data-primaryyaxistext="@db.AttributeIsNull(chartTitlePie,"PrimaryYAxisText","")"
+                                    data-secondaryYaxistext="@db.AttributeIsNull(chartTitlePie,"SecondaryYAxisText","")"
+                                    data-xaxistype="@db.AttributeIsNull(chartTitlePie,"XAxisType","")"
+                                    data-xaxisfontsize="@db.AttributeIsNull(chartTitlePie,"XAxisFontSize","")"
+                                    data-color="@db.AttributeIsNull(chartTitlePie,"Color","")"
+                                    data-borderradius="@db.AttributeIsNull(chartTitlePie,"BorderRadius","")"
+                                    data-borderwidth="@db.AttributeIsNull(chartTitlePie,"BorderWidth","")"
+                                    data-columncount="@db.AttributeIsNull(chartTitlePie,"ColumnCount","")"
+                                    data-switchcolumnandrows="@db.AttributeIsNull(chartTitlePie,"SwitchColumnAndRows","")"
+                                    data-creditsenabled="@db.AttributeIsNull(chartTitlePie,"CreditsEnabled","")"
+                                    data-secondaryyaxisopposite="@db.AttributeIsNull(chartTitlePie,"SecondaryYAxisOpposite","")"
+                                    data-legendenabled="@db.AttributeIsNull(chartTitlePie,"LegendEnabled","")"
+                                    data-exportbuttonenabled="@db.AttributeIsNull(chartTitlePie,"ExportButtonEnabled","")">@db.AttributeIsNull(chartTitlePie, "RowDescription", "")</th>
+
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col13", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col12", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col11", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col10", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col9", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col8", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col7", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col6", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col5", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col4", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col3", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col2", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitlePie, "Col1", "")</th>
+                                    <th>YAxisNumber</th>
+                                </tr>
+
+                                @foreach (XmlNode serie in seiriesPie)
+                                {
+                                    <tr>
+                                        <td>@db.AttributeIsNull(serie, "RowDescription", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                                        <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                                        <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                                        <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                                        <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                                        <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                                        <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                                    </tr>
+                                }
+
+                            </table>
+                        </div>
+                    </section>
+                        }
+
+                        
+                        {//we have a chart to show
+
+                            XmlNode chartTitleRed = data.SelectSingleNode("/kpidata/row[@KPIKey='" + chartKeyRed + "' and @DataType='ChartTitles']");
+                            XmlNodeList seiriesRed = data.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + chartKeyRed + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+                            <section>
+                                <!--chart container-->
+                                <div class="chart chartBig col-sm-7" id="@chartDivRed"></div>
+
+                                <!--chart data table container-->
+                                <div class="hidden">
+                                    <table id="@chartDataTableRed" class="chartDataTable">
+                                        <tr>
+                                            <th class="chartProperties"
+                                                data-charttitle="@db.AttributeIsNull(chartTitleRed,"Title","")"
+                                                data-subtitle="@db.AttributeIsNull(chartTitleRed,"SubTitle","")"
+                                                data-fontweight="@db.AttributeIsNull(chartTitleRed,"FontWeight","")"
+                                                data-fontsize="@db.AttributeIsNull(chartTitleRed,"FontSize","")"
+                                                data-primaryyaxistext="@db.AttributeIsNull(chartTitleRed,"PrimaryYAxisText","")"
+                                                data-secondaryYaxistext="@db.AttributeIsNull(chartTitleRed,"SecondaryYAxisText","")"
+                                                data-xaxistype="@db.AttributeIsNull(chartTitleRed,"XAxisType","")"
+                                                data-xaxisfontsize="@db.AttributeIsNull(chartTitleRed,"XAxisFontSize","")"
+                                                data-color="@db.AttributeIsNull(chartTitleRed,"Color","")"
+                                                data-borderradius="@db.AttributeIsNull(chartTitleRed,"BorderRadius","")"
+                                                data-borderwidth="@db.AttributeIsNull(chartTitleRed,"BorderWidth","")"
+                                                data-columncount="@db.AttributeIsNull(chartTitleRed,"ColumnCount","")"
+                                                data-switchcolumnandrows="@db.AttributeIsNull(chartTitleRed,"SwitchColumnAndRows","")"
+                                                data-creditsenabled="@db.AttributeIsNull(chartTitleRed,"CreditsEnabled","")"
+                                                data-secondaryyaxisopposite="@db.AttributeIsNull(chartTitleRed,"SecondaryYAxisOpposite","")"
+                                                data-legendenabled="@db.AttributeIsNull(chartTitleRed,"LegendEnabled","")"
+                                                data-exportbuttonenabled="@db.AttributeIsNull(chartTitleRed,"ExportButtonEnabled","")">@db.AttributeIsNull(chartTitleRed, "RowDescription", "")</th>
+
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col13", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col12", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col11", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col10", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col9", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col8", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col7", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col6", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col5", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col4", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col3", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col2", "")</th>
+                                                    <th>@db.AttributeIsNull(chartTitleRed, "Col1", "")</th>
+                                                <th>YAxisNumber</th>
+                                            </tr>
+
+                                            @foreach (XmlNode serie in seiriesRed)
+                                            {
+                                                <tr>
+                                                    <td>@db.AttributeIsNull(serie, "RowDescription","")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                                                    <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                                                </tr>
+                                            }
+
+                                        </table>
+                                    </div>
+                                </section>
+                                    }
+                       
+                                    {//we have a chart to show
+
+                                        XmlNode chartTitle = data.SelectSingleNode("/kpidata/row[@KPIKey='" + chartKey + "' and @DataType='ChartTitles']");
+                                        XmlNodeList series = data.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + chartKey + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+                                        <section>
+                                            <!--chart container-->
+                                            <div class="chart chartBig col-sm-12" id="@chartDiv"></div>
+
+                                            <!--chart data table container-->
+                                            <div class="hidden">
+                                                <table id="@chartDataTable" class="chartDataTable">
+                                                    <tr>
+                                                        <th class="chartProperties"
+                                                            data-charttitle="@db.AttributeIsNull(chartTitle,"Title","")"
+                                                            data-subtitle="@db.AttributeIsNull(chartTitle,"SubTitle","")"
+                                                            data-fontweight="@db.AttributeIsNull(chartTitle,"FontWeight","")"
+                                                            data-fontsize="@db.AttributeIsNull(chartTitle,"FontSize","")"
+                                                            data-primaryyaxistext="@db.AttributeIsNull(chartTitle,"PrimaryYAxisText","")"
+                                                            data-secondaryYaxistext="@db.AttributeIsNull(chartTitle,"SecondaryYAxisText","")"
+                                                            data-xaxistype="@db.AttributeIsNull(chartTitle,"XAxisType","")"
+                                                            data-xaxisfontsize="@db.AttributeIsNull(chartTitle,"XAxisFontSize","")"
+                                                            data-color="@db.AttributeIsNull(chartTitle,"Color","")"
+                                                            data-borderradius="@db.AttributeIsNull(chartTitle,"BorderRadius","")"
+                                                            data-borderwidth="@db.AttributeIsNull(chartTitle,"BorderWidth","")"
+                                                            data-columncount="@db.AttributeIsNull(chartTitle,"ColumnCount","")"
+                                                            data-switchcolumnandrows="@db.AttributeIsNull(chartTitle,"SwitchColumnAndRows","")"
+                                                            data-creditsenabled="@db.AttributeIsNull(chartTitle,"CreditsEnabled","")"
+                                                            data-secondaryyaxisopposite="@db.AttributeIsNull(chartTitle,"SecondaryYAxisOpposite","")"
+                                                            data-legendenabled="@db.AttributeIsNull(chartTitle,"LegendEnabled","")"
+                                                            data-exportbuttonenabled="@db.AttributeIsNull(chartTitle,"ExportButtonEnabled","")">@db.AttributeIsNull(chartTitle, "RowDescription", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col1", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col2", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col3", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col4", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col5", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col6", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col7", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col8", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col9", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col10", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col11", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col12", "")</th>
+                                                            <th>@db.AttributeIsNull(chartTitle, "Col13", "")</th>
+                                                            <th>YAxisNumber</th>
+                                                        </tr>
+
+                                                        @foreach (XmlNode serie in series)
+                                                        {
+                                                            <tr>
+                                                                <td>@db.AttributeIsNull(serie, "RowDescription", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                                                                <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                                                            </tr>
+                                                        }
+
+                                                    </table>
+                                                </div>
+                                            </section>
+                                                    }
+                                                }
+
+                <!-- Help Content t1 -->
+                        <div class="modal fade" id="@kpiHelpDiv" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                            <div class="modal-dialog modal-help" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header modalHeaderText @(kpiSection + "BgColor")">
+                                        <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title help-title">@HelpTitle</h4>
+                                    </div>
+                                    <div id="help_@helpKey" class="modal-body">
+                                    </div>
+                                    <div class="modal-footer">
+                                        @if (isAdmin == true && Session["impersonation"] == null)
+                                        {
+                                            <button type="button" class="btn btnHelp @("btnHelp" + @kpiSection)" data-dismiss="modal" onclick="window.open('content/helpEditor/helpEditor.cshtml?helpKey=' + @helpKey)">Edit</button>
+                                        }
+                                        <button type="button" class="btn btnHelp @("btnHelp" + @kpiSection)" data-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            var url = "/img/help/help_" + @helpKey +".html" +'?_=' + (new Date()).getTime();
+                            var  divID = "#help_" + @helpKey;
+                            $(divID).load(url);
+                        </script>
+                        }
+
+            @if (t2hasData == true)
+            {
+                <!--table 2-->
+                <table class="table table-hover table-bordered dashboard-table">
+
+
+
+                    <!--column titles-->
+                    @{
+                        <thead>
+                            <tr data-width="295">
+                                <th style="text-align:center">
+                                    <!-- Help Button -->
+                                    <span data-toggle="modal" data-target="#@t2kpiHelpDiv" title="@t2HelpTitle" class="glyphicon glyphicon-question-sign pull-left text-lg @(kpiSection + "Color")" style="cursor:pointer;"></span>
+                                    
+                                    @t2tableTitle
+                                </th>
+                                <!-- adds all the kpi's columns with the associated title.-->
+                                <th class="@t2col1TitleClass" title="@t2col1TitleText">@t2col1Title</th>
+                                <th class="@t2col2TitleClass" title="@t2col2TitleText">@t2col2Title</th>
+                                <th class="@t2col3TitleClass" title="@t2col3TitleText">@t2col3Title</th>
+                                <th class="@t2col4TitleClass" title="@t2col4TitleText">@t2col4Title</th>
+                                <th class="@t2col5TitleClass" title="@t2col5TitleText">@t2col5Title</th>
+                                <th class="@t2col6TitleClass" title="@t2col6TitleText">@t2col6Title</th>
+                                <th class="@t2col7TitleClass" title="@t2col7TitleText">@t2col7Title</th>
+                            </tr>
+                        </thead>
+                    }
+                    @{
+                        XmlNodeList t2tableRows = data.SelectNodes("/kpidata/row[@DataType='tableData' and @KPIKey='" + t2reportKey + "' and @RowKey<100]");
+                        if (t2tableRows != null)
+                        {
+                            <tbody>
+                                @foreach (XmlNode row in t2tableRows)
+                                {
+                                    <tr id="row-@db.AttributeIsNull(row, "ID", "")">
+                                        <td class="descriptionRow @db.AttributeIsNull(row, "Class", "")">
+                                            <span class="@db.AttributeIsNull(row, "KPIColor", "") pull-right" style="margin:3px"></span>
+                                            @db.AttributeIsNull(row, "RowDescription", "")
+                                        </td> <!-- adds the row description in the first column-->
+                                        @for (int y = 2; y <= 8; y++) // loop through and adds as many values as there are kpi columns
+                                        {
+                                            <td id="@db.AttributeIsNull(row, "ID", "")-@y.ToString()" class="amount @db.AttributeIsNull(row, "Class", "")">@db.AttributeIsNull(row, "Col" + (y - 1), "")</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        }
+                    }
+
+                </table>
+
+                <!--More Reports-->
+                        if (t2haslinkedReports == true)
+                        { //we have some linked reports so show the drop down list
+
+                            XmlNodeList t2linkedReports = data.SelectNodes("/kpidata/row[@KPIKey='" + t2reportKey + "' and @DataType='LinkedReports']");
+                            <ul class="nav navbar-nav hidden-xs">
+                                <li class="dropdown text-center" title="Linked Reports here">
+                                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                                        <span class="glyphicon glyphicon-folder-open @(kpiSection + "Color")"></span>
+                                        <span class="padding" style="color:#888b8d;">Linked Reports</span> <span class="glyphicon glyphicon-triangle-bottom dropdownArrow" style="color:#888b8d;"></span>
+                                    </a>
+                                    <ul class="dropdown-menu linkedReports" tabindex="4999">
+                                        @foreach (XmlNode report in t2linkedReports)
+                                        {
+                                            <li><a id="@db.AttributeIsNull(report, "ID", "")" target="_blank" href="@report.Attributes["Link_URL"].InnerText">@db.AttributeIsNull(report, "RowDescription", "")</a></li>
+                                        }
+                                    </ul>
+                                </li>
+                            </ul>
+                        }
+
+                <!--Chart-->
+                        if (t2hasChart == true)
+                        {//we have a chart to show
+                            {//we have a chart to show
+
+                                XmlNode t2chartTitlePie = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2chartKeyPie + "' and @DataType='ChartTitles']");
+                                XmlNodeList t2seriesPie = data.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + t2chartKeyPie + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+                                <section>
+                                    <button id="btn-@t2chartDiv" title="Show/Hide Chart" type="button" class="btn @(kpiSection + "BgColor") pull-right show-chart" onclick="ShowChart('@t2chartDivPie')"><span class="fa fa-bar-chart padding text-white" aria-hidden="true"></span></button>
+                                    <div class="clearfix"></div>
+                                       <!--chart container-->
+                                    <div class="chart chartBig col-sm-5" id="@t2chartDivPie"></div>
+
+                                    <!--chart data table container-->
+                                    <div class="hidden">
+                                        <table id="@t2chartDataTablePie" class="chartDataTable">
+                                            <tr>
+                                                <th class="chartProperties"
+                                                    data-charttitle="@db.AttributeIsNull(t2chartTitlePie,"Title","")"
+                                                    data-subtitle="@db.AttributeIsNull(t2chartTitlePie,"SubTitle","")"
+                                                    data-fontweight="@db.AttributeIsNull(t2chartTitlePie,"FontWeight","")"
+                                                    data-fontsize="@db.AttributeIsNull(t2chartTitlePie,"FontSize","")"
+                                                    data-primaryyaxistext="@db.AttributeIsNull(t2chartTitlePie,"PrimaryYAxisText","")"
+                                                    data-secondaryYaxistext="@db.AttributeIsNull(t2chartTitlePie,"SecondaryYAxisText","")"
+                                                    data-xaxistype="@db.AttributeIsNull(t2chartTitlePie,"XAxisType","")"
+                                                    data-xaxisfontsize="@db.AttributeIsNull(t2chartTitlePie,"XAxisFontSize","")"
+                                                    data-color="@db.AttributeIsNull(t2chartTitlePie,"Color","")"
+                                                    data-borderradius="@db.AttributeIsNull(t2chartTitlePie,"BorderRadius","")"
+                                                    data-borderwidth="@db.AttributeIsNull(t2chartTitlePie,"BorderWidth","")"
+                                                    data-columncount="@db.AttributeIsNull(t2chartTitlePie,"ColumnCount","")"
+                                                    data-switchcolumnandrows="@db.AttributeIsNull(t2chartTitlePie,"SwitchColumnAndRows","")"
+                                                    data-creditsenabled="@db.AttributeIsNull(t2chartTitlePie,"CreditsEnabled","")"
+                                                    data-secondaryyaxisopposite="@db.AttributeIsNull(t2chartTitlePie,"SecondaryYAxisOpposite","")"
+                                                    data-legendenabled="@db.AttributeIsNull(t2chartTitlePie,"LegendEnabled","")"
+                                                    data-exportbuttonenabled="@db.AttributeIsNull(t2chartTitlePie,"ExportButtonEnabled","")">@db.AttributeIsNull(t2chartTitlePie, "RowDescription", "")</th>
+
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col13", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col12", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col11", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col10", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col9", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col8", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col7", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col6", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col5", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col4", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col3", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col2", "")</th>
+                                                    <th>@db.AttributeIsNull(t2chartTitlePie, "Col1", "")</th>
+                                                    <th>YAxisNumber</th>
+                                                </tr>
+
+                                                @foreach (XmlNode serie in t2seriesPie)
+                                                {
+                                                    <tr>
+                                                        <td>@db.AttributeIsNull(serie, "RowDescription", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                                                        <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                                                        <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                                                        <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                                                        <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                                                        <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                                                        <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                                                    </tr>
+                                                }
+
+                                            </table>
+                                        </div>
+                                    </section>
+                                        }
+
+
+                                        {//we have a chart to show
+
+                                            XmlNode t2chartTitleRed = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2chartKeyRed + "' and @DataType='ChartTitles']");
+                                            XmlNodeList t2seiriesRed = data.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + t2chartKeyRed + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+                                            <section>
+                                                <!--chart container-->
+                                                <div class="chart chartBig col-sm-7" id="@t2chartDivRed"></div>
+
+                                                <!--chart data table container-->
+                                                <div class="hidden">
+                                                    <table id="@t2chartDataTableRed" class="chartDataTable">
+                                                        <tr>
+                                                            <th class="chartProperties"
+                                                                data-charttitle="@db.AttributeIsNull(t2chartTitleRed,"Title","")"
+                                                                data-subtitle="@db.AttributeIsNull(t2chartTitleRed,"SubTitle","")"
+                                                                data-fontweight="@db.AttributeIsNull(t2chartTitleRed,"FontWeight","")"
+                                                                data-fontsize="@db.AttributeIsNull(t2chartTitleRed,"FontSize","")"
+                                                                data-primaryyaxistext="@db.AttributeIsNull(t2chartTitleRed,"PrimaryYAxisText","")"
+                                                                data-secondaryYaxistext="@db.AttributeIsNull(t2chartTitleRed,"SecondaryYAxisText","")"
+                                                                data-xaxistype="@db.AttributeIsNull(t2chartTitleRed,"XAxisType","")"
+                                                                data-xaxisfontsize="@db.AttributeIsNull(t2chartTitleRed,"XAxisFontSize","")"
+                                                                data-color="@db.AttributeIsNull(t2chartTitleRed,"Color","")"
+                                                                data-borderradius="@db.AttributeIsNull(t2chartTitleRed,"BorderRadius","")"
+                                                                data-borderwidth="@db.AttributeIsNull(t2chartTitleRed,"BorderWidth","")"
+                                                                data-columncount="@db.AttributeIsNull(t2chartTitleRed,"ColumnCount","")"
+                                                                data-switchcolumnandrows="@db.AttributeIsNull(t2chartTitleRed,"SwitchColumnAndRows","")"
+                                                                data-creditsenabled="@db.AttributeIsNull(t2chartTitleRed,"CreditsEnabled","")"
+                                                                data-secondaryyaxisopposite="@db.AttributeIsNull(t2chartTitleRed,"SecondaryYAxisOpposite","")"
+                                                                data-legendenabled="@db.AttributeIsNull(t2chartTitleRed,"LegendEnabled","")"
+                                                                data-exportbuttonenabled="@db.AttributeIsNull(t2chartTitleRed,"ExportButtonEnabled","")">@db.AttributeIsNull(t2chartTitleRed, "RowDescription", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col13", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col12", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col11", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col10", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col9", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col8", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col7", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col6", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col5", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col4", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col3", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col2", "")</th>
+                                                                <th>@db.AttributeIsNull(t2chartTitleRed, "Col1", "")</th>
+                                                                <th>YAxisNumber</th>
+                                                            </tr>
+
+                                                            @foreach (XmlNode serie in t2seiriesRed)
+                                                            {
+                                                                <tr>
+                                                                    <td>@db.AttributeIsNull(serie, "RowDescription", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                                                                    <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                                                                    <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                                                                </tr>
+                                                            }
+
+                                                        </table>
+                                                    </div>
+                                                </section>
+                                                    }
+
+                                                    {//we have a chart to show
+
+                                                        XmlNode t2chartTitle = data.SelectSingleNode("/kpidata/row[@KPIKey='" + t2chartKey + "' and @DataType='ChartTitles']");
+                                                        XmlNodeList t2series = data.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + t2chartKey + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+                                                        <section>
+                                                            <!--chart container-->
+                                                            <div class="chart chartBig col-sm-12" id="@t2chartDiv"></div>
+
+                                                            <!--chart data table container-->
+                                                            <div class="hidden">
+                                                                <table id="@t2chartDataTable" class="chartDataTable">
+                                                                    <tr>
+                                                                        <th class="chartProperties"
+                                                                            data-charttitle="@db.AttributeIsNull(t2chartTitle,"Title","")"
+                                                                            data-subtitle="@db.AttributeIsNull(t2chartTitle,"SubTitle","")"
+                                                                            data-fontweight="@db.AttributeIsNull(t2chartTitle,"FontWeight","")"
+                                                                            data-fontsize="@db.AttributeIsNull(t2chartTitle,"FontSize","")"
+                                                                            data-primaryyaxistext="@db.AttributeIsNull(t2chartTitle,"PrimaryYAxisText","")"
+                                                                            data-secondaryYaxistext="@db.AttributeIsNull(t2chartTitle,"SecondaryYAxisText","")"
+                                                                            data-xaxistype="@db.AttributeIsNull(t2chartTitle,"XAxisType","")"
+                                                                            data-xaxisfontsize="@db.AttributeIsNull(t2chartTitle,"XAxisFontSize","")"
+                                                                            data-color="@db.AttributeIsNull(t2chartTitle,"Color","")"
+                                                                            data-borderradius="@db.AttributeIsNull(t2chartTitle,"BorderRadius","")"
+                                                                            data-borderwidth="@db.AttributeIsNull(t2chartTitle,"BorderWidth","")"
+                                                                            data-columncount="@db.AttributeIsNull(t2chartTitle,"ColumnCount","")"
+                                                                            data-switchcolumnandrows="@db.AttributeIsNull(t2chartTitle,"SwitchColumnAndRows","")"
+                                                                            data-creditsenabled="@db.AttributeIsNull(t2chartTitle,"CreditsEnabled","")"
+                                                                            data-secondaryyaxisopposite="@db.AttributeIsNull(t2chartTitle,"SecondaryYAxisOpposite","")"
+                                                                            data-legendenabled="@db.AttributeIsNull(t2chartTitle,"LegendEnabled","")"
+                                                                            data-exportbuttonenabled="@db.AttributeIsNull(t2chartTitle,"ExportButtonEnabled","")">@db.AttributeIsNull(t2chartTitle, "RowDescription", "")</th>
+
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col1", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col2", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col3", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col4", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col5", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col6", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col7", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col8", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col9", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col10", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col11", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col12", "")</th>
+                                                                            <th>@db.AttributeIsNull(t2chartTitle, "Col13", "")</th>
+                                                                            <th>YAxisNumber</th>
+                                                                        </tr>
+
+                                                                        @foreach (XmlNode serie in t2series)
+                                                                        {
+                                                                            <tr>
+                                                                                <td>@db.AttributeIsNull(serie, "RowDescription", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                                                                                <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                                                                                <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                                                                            </tr>
+                                                                        }
+
+                                                                    </table>
+                                                                </div>
+                                                            </section>
+                                                                    }
+                                                                }
+
+                <!-- Help Content t2 -->
+
+                        <div class="modal fade" id="@t2kpiHelpDiv" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                            <div class="modal-dialog modal-help" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header modalHeaderText @(kpiSection + "BgColor")">
+                                        <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                                        <h4 class="modal-title help-title">@t2HelpTitle</h4>
+                                    </div>
+                                    <div id="help_@t2helpKey" class="modal-body">
+                                    </div>
+                                    <div class="modal-footer">
+                                        @if (isAdmin == true && Session["impersonation"] == null)
+                                        {
+                                            <button type="button" class="btn btnHelp @("btnHelp" + @kpiSection)" data-dismiss="modal" onclick="window.open('content/helpEditor/helpEditor.cshtml?helpKey=' + @t2helpKey)">Edit</button>
+                                        }
+                                        <button type="button" class="btn btnHelp @("btnHelp" + @kpiSection)" data-dismiss="modal">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            var url = "/img/help/help_" + @t2helpKey +".html" +'?_=' + (new Date()).getTime();
+                            var  divID = "#help_" + @t2helpKey;
+                            $(divID).load(url);
+                        </script>
+
+                        }
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        //iCSM
+
+        Init_KPIPage('@t2chartDiv', '@kpiDetailDiv', '@t2chartDataTable', '@t2reportKey',
+       function () {
+
+           //eCSM
+           Init_KPIPage('@chartDiv', '@kpiDetailDiv', '@chartDataTable', '@reportKey', function () {
+               $('#chart6111').insertAfter('#chart6110')
+               $('#chart6121').insertAfter('#chart6120')
+               $('#chart6110 > div > svg > g > g > text, #chart6110 > div > svg > g > g > text > tspan').css({ 'text-shadow': 'none', 'font-weight': 'normal' });
+               $('#chart6120 > div > svg > g > g > text, #chart6120 > div > svg > g > g > text > tspan').css({ 'text-shadow': 'none', 'font-weight': 'normal' });
+           })
+
+
+       })
+    });
+
+</script>
+

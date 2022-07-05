@@ -1,0 +1,24 @@
+﻿@{
+    //Help
+    var helpData = Page.help;
+    var helpKey = "1001";
+    var HelpTitle = "";
+    var HelpContentHTML = "";
+
+    foreach (var record in helpData)
+    {
+        if (record.HelpKey == helpKey)
+        {
+            HelpTitle = record.HelpTitle;
+            HelpContentHTML = record.HelpContentHTML;
+            break;
+        }
+    }
+
+    // var helpData = db.UI_HelpContent_Get("1001");
+    //@Html.Raw(@HelpContentHTML)
+}
+
+<div id="dbHelp">
+    Loading....
+</div>

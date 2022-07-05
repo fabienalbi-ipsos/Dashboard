@@ -1,0 +1,81 @@
+﻿body {
+    padding: 90px 10px;
+}
+
+input {
+    padding-bottom: 10px;
+}
+
+.note-editor {
+    position: initial;
+}
+
+.help-editor-top {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.navbar-brand {
+    margin-left: 0px !important;
+}
+
+.navbar-right {
+    margin-top: 8px !important;
+}
+
+.btn-help-editor,
+.btn-help-editor:hover,
+.btn-help-editor:focus {
+    background-color: #1b365d;
+    color: white;
+}
+
+#saving,
+#deleting,
+#saving > i,
+#deleting > i {
+    color: #1b365d;
+}
+
+#saving > i,
+#deleting > i {
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+.btn-help-editor:hover {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: -2px;
+}
+
+.modal-content.help-preview  { /*matches the help preview style with the 'real' one*/
+    padding: 30px;
+    -webkit-box-shadow: none;
+    box-shadow: none;
+}
+
+#preview > h3 {
+    background-color: #c8c9c7;
+    border-radius: 3px;
+    padding: 5px;
+    color: white;
+    font-size: 19px;
+    text-align: center;
+    margin-top: 0px;
+}
+
+.modal-body.help-preview {
+    padding: 20px 0;
+    font-family: Calibri;
+    color: #888b8d;
+}
+
+.modal-body.help-preview > table {
+    width: 100% !important
+}
+
+#my-toolbar { 
+    position: fixed;
+    z-index: 1;
+    top: 60px;
+}

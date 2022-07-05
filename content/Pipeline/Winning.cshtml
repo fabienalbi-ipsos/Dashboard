@@ -1,0 +1,140 @@
+﻿@{
+    Page.Title = "Winning Proposals";
+
+
+    var userkey = db.GetUserKey();
+    var records = db.PM_GetWinning(userkey);
+
+}
+
+    <table id="winning-table" class="table table-hover table-bordered dashboard-table" style="width:100%">
+        <thead @*style="font-weight:bold;font-size:14px; background-color: gainsboro;  "*@>
+            <tr>
+                <th></th>
+                <th>Proposal Name</th>
+                <th id="defaultSort">Client</th>
+                <th>Product</th>
+                <th>Approval Date</th>
+                <th>Amount</th>
+                <th>Currency</th>
+                <th style="display:none"></th>
+                <th style="display:none"></th>
+                <th style="display:none"></th>
+                <th style="display:none"></th>
+
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in records)
+            {
+
+                <tr>
+                    <td class="fa fa-plus-circle navIcons hidden-xs"></td>
+
+                    <td>@record.ProposalName</td>
+                    <td>@record.ParentName</td>
+                    <td>@record.ProductName</td>
+
+                    <td>@record.ApprovalDate</td>
+                    <td>@record.ProposalAmount</td>
+                    <td>@record.LCU</td>
+                    <td style="display:none">@record.CreateDate</td>
+                    <td style="display:none">@record.ProposalID</td>
+                    <td style="display:none">@record.ProposalOwner</td>
+                    <td style="display:none">@record.Comment</td>
+
+                </tr>
+            }
+        </tbody>
+    </table>
+
+<script>
+        function format(d) {
+            // `d` is the original data object for the row
+            return '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px; table-layout: fixed; width: 600px;">' +
+                '<tr>' +
+                '<td><span style="font-weight: bold">Proposal ID:</span></td>' +
+                '<td>' + d[8] + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Create Date:</td>' +
+                '<td>' + d[7] + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Proposal Owner:</td>' +
+                '<td>' + d[9] + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td style = "word-wrap:break-word">Comment:</td>' +
+                '<td>' + d[10] + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Extra info:</td>' +
+                '<td>Journal entries here...</td>' +
+                '</tr>' +
+                '</table>';
+        }
+
+
+    $(document).ready(function () {
+        //$('#main-table').hide();
+            var date = new Date();
+        var table = $('#winning-table').DataTable({
+               "lengthMenu": [[100, 200, 500, -1], [100, 200, 500, "All"]],
+              
+              "paging": true,
+              "scrollY": '400px',
+              "scrollCollapse": true,
+               "lengthChange": true,
+                "processing": true,
+
+                "oSearch": {
+                    "bSmart": false,
+                    "bRegex": true,
+                    "sSearch": ""
+                },
+             
+
+              "dom": "<'row'<'col-sm-1'f>>" +
+                  "<'row'<'col-sm-12'tr>>" +
+                  "<'row'<'col-sm-4'i><'col-sm-4'l><'col-sm-4'p>>",
+                buttons: [
+                    'copyHtml5',
+                    {
+                        extend: 'excelHtml5',
+                        filename: 'PendingPipeline' + date.toLocaleDateString()
+                    },
+                ]
+            });
+
+      
+
+            // Add event listener for opening and closing details
+            $('#winning-table tbody').on('click', 'td.fa-plus-circle', function () {
+                var tr = $(this).closest('tr');
+                var row = table.row(tr);
+                //var td = row.child[0];
+                //$(td).removeClass('fa-plus-circle').addClass('fa-minus-circle');
+
+                if (row.child.isShown()) {
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                }
+                else {
+                    // Open this row
+                   
+                    row.child(format(row.data())).show();
+                    tr.addClass('shown');
+                }
+            });
+
+            //$('#main-table').show('slow');
+       
+     
+        
+
+        }
+           );
+    
+    </script>

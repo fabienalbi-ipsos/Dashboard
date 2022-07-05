@@ -1,0 +1,120 @@
+﻿@{
+    Page.Title = "Users By Tree Node";
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+    var records = db.Admin_GetUsersByTreeNode();
+    var help = db.UI_HelpContent_Get("1145");
+    var userkey = db.GetUserKey();
+}
+
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+    <link href="/css/bootstrap-reset.css" rel="stylesheet">
+
+    <!--Dashboard custom styles-->
+    <link href="/css/dashboard.css?random=1022" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.css" />
+    <link href="/css/font-awesome.min.css" rel="stylesheet" /> <!-- font-awesome.css 4.7.0 -->
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+</head>
+
+<body>
+    <h1 class="page-header" style="margin-left:10px;">Users By Tree Node Report
+        @*<a style="margin-left: 10px;font-size: 26px;vertical-align: middle;"class="fa fa-question-circle-o" aria-hidden="true" data-toggle="modal" data-target="#securityReportHelp" title="@help.HelpTitle"></a>*@
+    </h1>
+    <div>
+        <table id="main-table" class="table table-hover table-bordered security-table">
+            <thead style="font-weight:bold;font-size:12px">
+                <tr>
+                    <th>Tree</th>
+                    <th>Scope</th>
+                    <th>Scope ID</th>
+                    <th>Scope Key</th>
+                    <th>Year</th>
+                    <th>User Name</th>
+                    <th>User ID</th>
+                    <th>Level</th>
+                    <th>Function Group</th>
+                    <th>Function</th>
+                    <th>Global Title</th>
+                    <th>User Type Source (MIS)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var record in records)
+            {
+                    <tr>
+                        <td>@record.TreeType</td>
+                        <td>@record.Scope</td>
+                        <td>@record.ScopeID</td>
+                        <td>@record.ScopeKey</td>
+                        <td>@record.ScopeYear</td>
+                        <td>@record.userName</td>
+                        <td>@record.RecordKey</td>
+                        <td>@record.Level</td>
+                        <td>@record.FunctionGroup</td>
+                        <td>@record.Function</td>
+                        <td>@record.GlobalTitle</td>
+                        <td>@record.Role</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+
+<div class="modal fade" id="securityReportHelp" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-help modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header modalHeaderText clientBgColor">
+                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title help-title">@help.HelpTitle</h4>
+            </div>
+            <div class="modal-body">
+                @Html.Raw(help.HelpContentHTML)
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=1145')">Edit</button>
+                <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    $(document).ready(function () {
+        var date = new Date();
+        $('#main-table').DataTable({
+            fixedHeader: true,
+            paging: false,
+            "oSearch": {
+                "bSmart": false,
+                "bRegex": true,
+                "sSearch": ""
+            },
+            dom: 'Bfrtip',
+            buttons: [
+                'copyHtml5',
+                {
+                    extend: 'excelHtml5',
+                    filename: 'Users_By_Tree_Node_' + date.toLocaleDateString()
+                },
+            ]
+        });
+    });
+</script>

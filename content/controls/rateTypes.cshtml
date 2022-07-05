@@ -1,0 +1,62 @@
+﻿@using System.Xml;
+
+@{
+
+    KPIxml xml = new KPIxml();
+    var defaultRateType = "";
+
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    //which page called this control? pipeline or dashboard? 
+    var pageToLoad = PageData[0]; //pipeline passes a value in the 0 position of the PageData array ("pipeline")
+    if (pageToLoad == null)
+    {//called from the dashboard which doesn't pass any page data
+        pageToLoad = "";
+    }
+
+    XmlNodeList rateTypes = data.SelectNodes("/kpidata/row[@DataType='Controls' and @ParameterType='6']");
+
+    defaultRateType = db.AttributeIsNull(data.SelectSingleNode("/kpidata/row[@DataType='Controls' and @ParameterType='6' and @isDefault='1']"),"ParameterValueName","");
+
+}
+
+<li class="dropdown" title="FX Rate">
+    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+        <span id="selectedRateType">@defaultRateType</span> <span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span>
+    </a>
+    <ul class="dropdown-menu pro-menu" tabindex="4999" id="rateTypesDropDown">
+
+        @foreach(XmlNode rateType in rateTypes)
+        {
+            <li><a id="@db.AttributeIsNull(rateType,"ParameterValue","")" href="#">@db.AttributeIsNull(rateType,"ParameterValueName","")</a></li>
+            }
+    </ul>
+</li>
+<script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+
+<script>
+    //update the selected period displayed to the user
+    $('#rateTypesDropDown li a').one('click', function () {
+        $('#dashboardNavBar').hide();
+        $("#content").html('<h2 class="text-center" style="font-size:40px;"><i id="spinner" class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#5e5e5e;"></i> Loading...</h2> ');
+        $('#selectedRateType').text($(this).text());
+
+        var rateType = $(this).attr('id')
+
+        //Add here a step to update the parameters for the user
+        var UpdateControl = "../content/controls/UpdateControl?parameterType=6&parameterValue=" + rateType;
+        $.post(UpdateControl, function () {
+
+            //get the value from Razor variable
+            var pageToLoad = "@pageToLoad"; //to call a Razor variable, use the atSign and surround in quotes (if its a string)
+
+            if (pageToLoad === "pipeline") {
+                window.location = 'pipeline.cshtml?BI=true';
+            }
+            else {
+                window.location = 'Index.cshtml?BI=true';
+            }
+        });
+
+    });
+</script>

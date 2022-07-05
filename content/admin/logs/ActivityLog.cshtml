@@ -1,0 +1,51 @@
+﻿@{
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+    var records = db.UI_UserActivityLog_Get(Request["userId"]);
+    var user = db.UI_UserDefaults_Get(Request["userId"]);
+}
+
+<link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+<h1 class="page-header" style="margin-left:10px;">Activity Log<small> @user.FullName (@user.RecordKey)</small></h1>
+
+<div>
+@if (records.Count != 0)
+{
+    <table class="table table-striped log-table" style="font-size:8pt">
+        <thead style="font-weight:bold">
+            <tr>
+                <td>Activity Type</td>
+                <td>Activity Name</td>
+                <td>Activity Date</td>
+            </tr>
+        </thead>
+        <tbody>
+                @foreach (var record in records)
+                {
+                    <tr>
+                        <td>@record.Category</td>
+                        <td>@record.Name</td>
+                        <td>@record.ActivityDate</td>
+                    </tr>
+                }
+            
+        </tbody>
+    </table>
+} else
+{
+    <h3>No activies recorded for this user</h3>
+}
+</div>

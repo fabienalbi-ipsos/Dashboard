@@ -1,0 +1,183 @@
+﻿@{
+    Session["impersonation"] = null; //used while an admin runs the 'View As' feature
+    var userID = Request["userId"];
+    int test = int.TryParse(Request["userId"], out test) ? test : 0; //check if the value is an integer, if not returns 0.
+    dynamic records = null, comment = null;
+    string userKey = "";
+    if (test != 0)
+    {
+        userKey = db.GetUserKey();
+        records = db.Admin_Upload_UserSetup();
+        comment = db.Admin_UserSetup_Comment_Get(userID);
+    }
+}
+
+@if (records != null)
+{
+    foreach (var record in records)
+    {
+        if (record.UserKey.ToString() == userID)
+        {
+            <thead style="font-weight:bold">
+                <tr style="background-color: #f8f8f8;">
+                    <th><a title="User Setup Help" class="glyphicon glyphicon-question-sign pull-left" style="font-size:20px" href="userSetupHelp.cshtml" target="_blank"></a>Default Scope Key</th>
+                    <th>Scope Name</th>
+                    <th>Default Role Key</th>
+                    <th>Role Name</th>
+                    <th>Default Currency</th>
+                    <th>Has Group</th>
+                    <th>Has CFO</th>
+                    <th>Has RM</th>
+                    <th>Has CCM</th>
+                    <th>Has BUM</th>
+                    <th>Has WM</th>
+                    <th>Warnings</th>
+                    <th>Session Disallowed</th>
+                </tr>
+            </thead>
+                <tbody>
+                    <tr>
+                        <td>@record.DefaultScopeKey</td>
+                        <td>@record.ScopeName</td>
+                        <td>@record.DefaultRoleKey</td>
+                        <td>@record.RoleName</td>
+                        <td>@record.DefaultCurrency</td>
+                        @if (record.HasGroup == true)
+                        {
+                            <td title="Group">✔</td> }
+                        else
+                        {
+                            <td title="Group"></td> }
+                        @if (record.HasCFO == true)
+                        {
+                            <td title="CFO">✔</td> }
+                        else
+                        {
+                            <td title="CFO"></td> }
+                        @if (record.HasRM == true)
+                        {
+                            <td title="RM">✔</td> }
+                        else
+                        {
+                            <td title="RM"></td> }
+                        @if (record.HasCCM == true)
+                        {
+                            <td title="CCM">✔</td> }
+                        else
+                        {
+                            <td title="CCM"></td> }
+                        @if (record.HasBUM == true)
+                        {
+                            <td title="BUM">✔</td> }
+                        else
+                        {
+                            <td title="BUM"></td> }
+                        @if (record.HasWM == true)
+                        {
+                            <td title="WM">✔</td> }
+                        else
+                        {
+                            <td title="WM"></td> }
+                        <td><div style="width:300px;text-align:left">@record.Comments</div></td>
+                        @if (record.SessionAllowed != 1)
+                        {
+                            <td>✘</td> }
+                        else
+                        {
+                            <td></td> }
+                    </tr>
+                    <tr style="background-color: #f8f8f8;">
+                        <th colspan="8" style="text-align:left">Comments</th>
+                        <th style="text-align:center">Tech ok?</th>
+                        <th style="text-align:center">Setup valid?</th>
+                        <th></th>
+                        <th colspan="2">Last Update</th>
+                    </tr>
+                    <tr>
+                        <td colspan="8" style="text-align:left;border-right: none;"><textarea rows="4" cols="10" id="comment">@comment.Comment</textarea></td>
+
+                        @if (userKey == "1" || userKey == "5" || userKey == "28433")
+                        {
+                            if (comment.Validated)
+                            {
+                                <td id="checkbox"><input id="validated" type="checkbox" checked="checked" /></td> }
+                            else
+                            {
+                                <td id="checkbox"><input id="validated" type="checkbox" /></td> }
+                        }
+                        else
+                        {
+                            if (comment.Validated == true)
+                            {
+                                <td id="validated">✔</td> }
+                            else
+                            {
+                                <td id="validated">✘</td> }
+                        }
+
+                        @if (userKey == "170" || userKey == "2124")
+                        {
+                            if (comment.SetupValidated)
+                            {
+                                <td id="checkbox"><input id="setupvalidated" type="checkbox" checked="checked" /></td> }
+                            else
+                            {
+                                <td id="checkbox"><input id="setupvalidated" type="checkbox" /></td> }
+                        }
+                        else
+                        {
+                            if (comment.SetupValidated == true)
+                            {
+                                <td id="setupvalidated">✔</td> }
+                            else
+                            {
+                                <td id="setupvalidated">✘</td> }
+                        }
+                        <td style="border-left: none;"><a id="save" href="javascript:setComment()" style="font-weight:bold;color:blue;text-decoration:underline;">Save</a></td>
+                        <td colspan="2">@comment.LastUpdateDate by @comment.FullName</td>
+                    </tr>
+                    }
+                    }
+                </tbody>
+        }
+    }
+
+
+
+
+    <script>
+        function setComment() {
+            $.post("setComment.cshtml", {
+                userID: @userID,
+                comment: $('#comment').val(),
+                adminKey: @userKey,
+                validated: ($('#validated').is(':checked') || $('#validated').text() == "✔"),
+                setupvalidated: ($('#setupvalidated').is(':checked') || $('#setupvalidated').text() == "✔")
+                }).done(function(){
+                    $('#save').text('Saved!').css({'color':'green'})
+                    setTimeout(function(){
+                        $('#save').text('Save').css({'color':'blue'})
+                    }, 1500);
+                })
+        }
+    </script>
+
+}
+
+<style>
+    textarea {
+        border: none;
+        width: 100%;
+        -webkit-box-sizing: border-box; /* <=iOS4, <= Android  2.3 */
+           -moz-box-sizing: border-box; /* FF1+ */
+                box-sizing: border-box; /* Chrome, IE8, Opera, Safari 5.1*/
+    }
+
+    td#setupvalidated,
+    td#validated,
+    td#checkbox {
+        text-align: center;
+        vertical-align: middle;
+        font-size: 30px;
+    }
+</style>

@@ -1,0 +1,318 @@
+﻿@{
+    string userKey = db.GetUserKey();
+
+    //get some user record parameters
+    var user = db.UI_User_Get(userKey);
+
+    bool hasTotal = user.HasTotal;
+
+    var TotalName = user.GroupName;
+    var ExceptionList = user.ExceptionList;
+    var ExcludeAcquisitions = user.ExcludeAcquisitions;
+
+    System.Text.StringBuilder html = new System.Text.StringBuilder();
+
+    if (Session["tree"] != null)
+    {   //get the tree from the session variable if it exists
+        html.AppendLine(Session["tree"].ToString());
+    }
+
+    else
+    {
+        //get the data from the database
+        var records = db.GetTreeByUser();
+        foreach (var record in records)
+        {
+            html.AppendLine(record.Tag.ToString());
+        }
+
+        Session["tree"] = html.ToString();
+    }
+}
+
+<!-- Modal -->
+<div class="modal fade" id="treeModal" tabindex="-1" role="dialog" aria-labelledby="treeModalLabel">
+    <div class="modal-dialog" role="document" style="width:700px">
+        <div class="modal-content">
+            <div id="selectedTitle" class="modal-header bg-info modalHeaderText">
+                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" style="font-weight:bold"><span id="selected"><i class="fa fa-circle-o-notch fa-spin pull-left" style="font-size:24px;color:white;margin-right:20px;"></i>Loading...</span></h4>
+            </div>
+            <div class="modal-body  p-0" style="padding-top:10px !important;">
+                <div class="btn-group p-b-10"  role="group" aria-label="...">
+                    <button id="btnL" type="button" style="width:100px;margin-right:5px;display:none;" class="btn btn-default btn-tree" onclick="GetTreeType('L')">Legal</button>
+                    <button id ="btnM" type="button" style="width:100px;margin-right:5px;display:none;"class="btn btn-default btn-tree" onclick="GetTreeType('M')">Mgt</button>
+                    <button id="btnW" type="button" style="width:100px;margin-right:5px;display:none;"class="btn btn-default btn-tree" onclick="GetTreeType('W')">Service Line</button>
+                </div>
+                
+                <div class="tree">
+                    @if (hasTotal)
+                    {
+                        <ul class="L">
+                            <li>
+                                <i class="glyphicon glyphicon-globe" style="margin-left:-18px;"></i>
+                                <label onclick="GetTreeNode('TotalLegal');this.removeAttribute('onclick')"><input type="checkbox" class="checkbox" id="TotalLegal" value="Total Legal">Total Legal @TotalName</label>
+                            </li>
+                        </ul>
+                        <ul class="M">
+                            <li>
+                                <i class="glyphicon glyphicon-globe" style="margin-left:-18px;"></i>
+                                <label onclick="GetTreeNode('TotalManagement');this.removeAttribute('onclick')"><input type="checkbox" class="checkbox" id="TotalManagement" value="Total Management">Total Management @TotalName</label>
+                            </li>
+                        </ul>
+                        <ul class="W">
+                            <li>
+                                <i class="glyphicon glyphicon-globe" style="margin-left:-18px;"></i>
+                                <label onclick="GetTreeNode('TotalWSBL');this.removeAttribute('onclick')"><input type="checkbox" class="checkbox" id="TotalWSBL" value="Total WSBL">Total Service Line @TotalName</label>
+                            </li>
+                        </ul>
+                    }
+                    @Html.Raw(@html)
+                </div>
+            </div>
+            <div class="modal-footer">
+                @if (ExceptionList != "") {
+                    <span class="pull-left" style="font-size: 11px;text-align: left;width: 80%; margin-bottom:10px;">@ExceptionList</span>
+                }
+                <label onclick="ToggleAcquisitions();this.removeAttribute('onclick')" style="margin-right:488px; margin-bottom:5px;"><input type="checkbox" class="checkbox" id="ExcludeAcquisitions">Exclude Acquisitions **</label>
+                <span class="pull-left" style="font-size: 11px;text-align: left;width: 100%; margin-bottom:10px;">** Please note that this feature applies to all the KPIs in the BI Business Dashboard, including the BMR and FMR Export Templates, but does not apply to the Linked Reports accessible at the bottom of each KPI. To generate BI reports with Organic scope only, please go to the other BI tabs and run the reports with the desired selections using the Scope and Status filter under More Filters.</span>
+                <hr style="margin-top:80px;" />
+                <button type="button" class="btn btn-default btn-tree" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(function () {
+        $('input:checkbox').each(function () { this.checked = false; });
+        if ("@ExcludeAcquisitions" == "True") { $('#ExcludeAcquisitions').prop('checked', true); }
+        $("input:checkbox[value='" + $("#btnScope").data('scope') + "']").prop('checked', true);
+        if ($("#btnScope").data('scope') == 'Total Service Line') { $("input:checkbox[value='Total WSBL']").prop('checked', true); }
+        $(".tree").css("display", "none");
+        $('.tree li:has(ul)').addClass('parent_li').find(' > span').attr('title', 'Collapse this branch');
+        $('.tree li.parent_li > span').on('click', function (e) {
+            var children = $(this).parent('li.parent_li').find(' > ul > li');
+            if (children.is(":visible")) {
+                children.hide('fast');
+                $(this).attr('title', 'Expand this branch').find(' > i').addClass('glyphicon-plus-sign').removeClass('glyphicon-minus-sign');
+            } else {
+                children.show('fast');
+                $(this).attr('title', 'Collapse this branch').find(' > i').addClass('glyphicon-minus-sign').removeClass('glyphicon-plus-sign');
+            }
+            e.stopPropagation();
+        });
+
+        //when the modal is shown, collapse the nodes
+        $('#treeModal').on('shown.bs.modal', function () {
+            if ($("#btnScope").text() == "Select Scope") {
+                $("#selected").text("Please select an existing scope or another year ");
+            } else {
+                $("#selected").text($("#btnScope").text());
+            }
+            collapseNodes();
+            displayNodes();
+            if ($("ul").hasClass("L")) {
+                $("#btnL").css("display", "block");
+            }
+            else { $("#btnL").css("display", "none"); }
+
+            if ($("ul").hasClass("M")) {
+                $("#btnM").css("display", "block");
+            }
+            else { $("#btnM").css("display", "none"); }
+
+            if ($("ul").hasClass("W")) {
+                $("#btnW").css("display", "block");
+            }
+            else { $("#btnW").css("display", "none"); }
+            $(".tree").css("display", "block");
+        })
+    });
+
+    function collapseNodes() {
+        //total node at the top of the tree
+        $(".total").each(function () {
+            var children = $(this).parent('li.parent_li').find(' > ul > li');
+            children.css("display", "none");
+            $(this).attr('title', 'Expand this branch').find(' > i').addClass('glyphicon-plus-sign').removeClass('glyphicon-minus-sign');
+        });
+        $("span[class^='level']:not('.level7'):not('.L .level4')").each(function () { //builds a class such as level3
+                $(this).parent('li.parent_li').find(' > ul > li').css("display", "none");
+                $(this).attr('title', 'Expand this branch').find(' > i').addClass('glyphicon-plus-sign').removeClass('glyphicon-minus-sign');
+        });
+        // Check which tree type is selected and make the corresponding button active
+        var selectedTreeType = $("#selected").text().substring(0, 1);
+        if (selectedTreeType == "T") { selectedTreeType = $("#selected").text().substring(6, 7); }
+        $("#btnM, #btnL, #btnW").removeClass("active");
+        $("#btn" + selectedTreeType).addClass("active");
+        if (selectedTreeType == "L") {
+            $(".L").css("display", "block");
+            $(".M").css("display", "none");
+            $(".W").css("display", "none");
+        }
+
+        if (selectedTreeType == "M") {
+            $(".L").css("display", "none");
+            $(".M").css("display", "block");
+            $(".W").css("display", "none");
+        }
+
+        if (selectedTreeType == "S" || selectedTreeType == "W") {
+            $("#btnW").addClass("active");
+            $(".L").css("display", "none");
+            $(".M").css("display", "none");
+            $(".W").css("display", "block");
+        }
+    }
+
+    function GetTreeNode(TreeNodeID) {
+        //uncheck any previous selections
+        $('input:checkbox').each(function () { this.checked = false; });
+
+        //check the new one
+        $('#' + TreeNodeID + ':checkbox').prop('checked', true);
+        var node = $("#" + TreeNodeID).val();
+      
+        $('#treeModal').modal('toggle');
+        setTimeout(function () {
+            $('#dashboardNavBar').css("display", "none");
+            $("#content").html('<h2 class="text-center" style="font-size:40px;"><i id="spinner" class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#5e5e5e;"></i> Loading...</h2> ');
+        }, 400)
+        $("#btnScope").html('<i class="fa fa-circle-o-notch fa-spin pull-left" style="font-size:16px;color:black;margin-right:5px;margin-top:2px;"></i>Loading...');
+        $("#btnScope").data('scope', node);
+
+        //save the selected tree type and then save the selected tree node 
+        var selectedTreeType = node.substring(0, 1);
+
+        if (selectedTreeType == "T") { selectedTreeType = node.substring(6, 7); }
+
+        //save the tree type in UI_Parameters
+        var UpdateControl = "../content/controls/UpdateControl?parameterType=8&parameterValue=" + selectedTreeType;
+        $.post(UpdateControl, function () {
+
+            //save the tree node ID in UI_Parameters
+            var UpdateControl = "../content/controls/UpdateControl?parameterType=2&parameterValue=" + TreeNodeID;
+            $.post(UpdateControl, function () {
+
+                //which page are we calling from?
+                if ($("span:contains('BI Pipeline Monitor')").length > 0) {
+                    console.log("we are on the pipeline page");
+
+                    window.location = 'pipeline.cshtml?BI=true';
+                }
+
+                else {
+                //load the index page
+                    window.location = 'Index.cshtml?BI=true';
+                }
+            });
+
+        });
+    }
+
+    function GetTreeType(TreeCode) {
+
+        if (TreeCode == 'L') {
+            $("#btn" + TreeCode).addClass("active");
+            $(".L").each(function () {
+
+                $(".L").css("display", "block");
+            });
+
+
+            $(".M").each(function () {
+                $(".M").css("display", "none");
+                $("#btnM").removeClass("active");
+            });
+
+
+            $(".W").each(function () {
+                $(".W").css("display", "none");
+                $("#btnW").removeClass("active");
+            });
+        }
+
+        if (TreeCode == 'M') {
+            $(".L").each(function () {
+                $(".L").css("display", "none");
+                $("#btnL").removeClass("active");
+            });
+
+            $(".M").each(function () {
+                $(".M").css("display", "block");
+                $("#btnM").addClass("active");
+            });
+
+            $(".W").each(function () {
+                $(".W").css("display", "none");
+                $("#btnW").removeClass("active");
+            });
+
+        }
+        if (TreeCode == 'W') {
+            $(".L").each(function () {
+                $(".L").css("display", "none");
+                $("#btnL").removeClass("active");
+            });
+
+            $(".M").each(function () {
+                $(".M").css("display", "none");
+                $("#btnM").removeClass("active");
+            });
+
+            $(".W").each(function () {
+
+                $(".W").css("display", "block");
+                $("#btnW").addClass("active");
+            });
+        }
+
+    }
+
+    function displayNodes() {
+        var selectedNode = $("input:checkbox[value='" + $("#selected").text() + "']");
+        if ($("#selected").text().match(/^T.*$/) != null) {
+            var treeClass = selectedNode.closest('ul').attr('class');
+            selectedNode.closest('ul').siblings('ul.' + treeClass).andSelf().css("display", "block");
+        } else {
+            var nodeLevel = parseInt($("#selected").text().substring(1, 2));
+            // expand parents
+            for (var i = nodeLevel; i > 0; i--) {
+                var parent = $("input:checkbox[value='" + $("#selected").text() + "']").parents('li')[i];
+                $(parent).children('span').attr('title', 'Collapse this branch').find(' > i').removeClass('glyphicon-plus-sign').addClass('glyphicon-minus-sign');
+                var children = $(parent).find(' > ul > li');
+                children.css("display", "list-item");
+            }
+
+            // show nodes at the same level without expanding them
+            selectedNode.closest('ul').siblings('ul').andSelf().css("display", "block");
+        }
+    }
+
+    function ToggleAcquisitions() {
+        $('#treeModal').modal('toggle');
+        setTimeout(function () {
+            $('#dashboardNavBar').css("display", "none");
+            $("#content").html('<h2 class="text-center" style="font-size:40px;"><i id="spinner" class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#5e5e5e;"></i> Loading...</h2> ');
+        }, 400)
+        $("#btnScope").html('<i class="fa fa-circle-o-notch fa-spin pull-left" style="font-size:16px;color:black;margin-right:5px;margin-top:2px;"></i>Loading...');
+        if ($('#ExcludeAcquisitions').prop('checked')) {
+            var UpdateControl = "../content/controls/UpdateControl?parameterType=16&parameterValue=True";
+        }
+        else {
+            var UpdateControl = "../content/controls/UpdateControl?parameterType=16&parameterValue=False";
+        }
+        $.post(UpdateControl, function () {
+            if ($("span:contains('BI Pipeline Monitor')").length > 0) {
+                console.log("we are on the pipeline page");
+
+                window.location = 'pipeline.cshtml?BI=true';
+            }
+            else {
+            //load the index page
+                window.location = 'Index.cshtml?BI=true';
+            }
+        });
+    }
+</script>

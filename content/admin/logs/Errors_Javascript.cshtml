@@ -1,0 +1,96 @@
+﻿@{
+    var records = db.UI_Errors_Javascript_Get();
+
+    //Client-side errors page help (key: 1134)
+    var helpKey = "1134";
+    var help = db.UI_HelpContent_Get(helpKey);
+}
+
+<link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+<link href="/css/bootstrap-reset.css" rel="stylesheet">
+
+<!--Dashboard custom styles-->
+<link href="/css/dashboard.css?random=10" rel="stylesheet" />
+
+<button type="button" id="btn-help" class="btn-admin btn" data-toggle="modal" data-target="#help-modal" title="@help.HelpTitle">Help</button>
+<div style="width:60%">
+    <table class="table table-hover table-bordered  dashboard-table" style="font-size:10pt">
+        <thead style="font-weight:bold">
+            <tr>
+                <th>User Key</th>
+                <th class="descriptionRow">User Name</th>
+                <th class="descriptionRow">Date</th>
+                <th>Session key</th>
+                <th>Error Key</th>
+                <th>Error Message</th>
+                <th>Tree Type</th>
+                <th>Scope</th>
+                <th>Year</th>
+                <th>Period</th>
+                <th>Currency</th>
+                <th>Rate Type</th>
+                <th>Rounding</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in records)
+            {
+                <tr>
+                    <td>@record.UserKey</td>
+                    <td class="descriptionRow">@record.FullName</td>
+                    <td class="descriptionRow">@record.InsertDate</td>
+                    <td>@record.SessionKey</td>
+                    <td>@record.RecordKey</td>
+                    <td>@record.ErrorMessage</td>
+                    <td>@record.Control_TreeType</td>
+                    <td>@record.Scope</td>
+                    <td>@record.Control_Year</td>
+                    <td>@record.Control_Period</td>
+                    <td>@record.Control_Currency</td>
+                    <td>@record.Control_RateType</td>
+                    <td>@record.Control_Rounding</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-help modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header modalHeaderText clientBgColor">
+                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title help-title">@help.HelpTitle</h4>
+            </div>
+            <div class="modal-body">
+                @Html.Raw(help.HelpContentHTML)
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=@helpKey')">Edit</button>
+                <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+<script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+
+<style>
+    #btn-help {
+        position: fixed;
+        top: 5px;
+        right: 5px;
+    }
+
+    .btn-admin,
+    .btn-admin:hover,
+    .btn-admin:focus {
+        background-color: #1b365d;
+        color: white;
+    }
+
+    #help-modal > .modal-dialog {
+        width: 70%;
+    }
+</style>

@@ -1,0 +1,30 @@
+﻿@{
+    var userKey = "";
+    var alertType = "None";
+
+    if(Request["userKey"] != null)
+    {
+        userKey = Request["userKey"];
+
+    }
+
+    if (Request["alertType"] != null)
+    {
+        alertType = Request["alertType"];
+
+    }
+}
+
+<p>
+    userKey: @userKey
+    alertType: @alertType
+
+</p>
+<script>
+
+   //this loops continously 
+        //window.location.href = window.location.href.replace(window.location.search, '');
+
+
+
+</script>

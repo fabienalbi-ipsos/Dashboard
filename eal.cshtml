@@ -1,0 +1,39 @@
+﻿@{
+
+    string u = Request["u"];   //user
+    //string p = Request["p"];   //periodKey
+    string a = Request["a"];   //alerttype
+    //string d = Request["d"];   //datesent
+
+    var activityName = "";
+    if (a == "1") { activityName = "MonthEnd"; }
+    if (a == "2") { activityName = "MonthEndCutoff2"; }
+
+
+
+    if (u !="" && u != null && a != "" && a != null)
+    {
+        db.UI_UserActivityLog_Set(u, "Email", activityName);
+    }
+
+    string host = Request.Url.Authority;
+
+    if (host == "bidashboard.ipsos")
+    {
+        Response.Redirect("http://bi.ipsos");
+    }
+    else if (host == "dashboard-bi.ipsos.com")
+    {
+        Response.Redirect("https://bi.ipsos.com");
+    }
+    else if (host == "dashboard-bitest.ipsos.com")
+    {
+        Response.Redirect("https://bitest.ipsos.com");
+    }
+    else
+    {
+        Response.Redirect("https://bidev.ipsos.com");
+    }
+}
+
+

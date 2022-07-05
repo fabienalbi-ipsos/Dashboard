@@ -1,0 +1,14 @@
+﻿@{
+
+    var parameterType = Request["parameterType"];
+    var parameterValue = Request["parameterValue"];
+
+    if (parameterType == "3")
+    {
+        Session["Tree"] = null;
+    }
+
+    db.UI_UserParameter_Set(parameterType, parameterValue);
+
+
+}

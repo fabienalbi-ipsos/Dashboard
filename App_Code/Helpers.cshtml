@@ -1,0 +1,254 @@
+﻿//@using System.Xml;
+
+@*@helper helpContent(string kpiHelpDiv, string HelpKey, string HelpTitle, string kpiSection, bool isAdmin)
+{
+
+// Adds a help div with a kpi specific ID, title and body coming from the 3 params
+    <div class="modal fade" id="@kpiHelpDiv" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog modal-help" role="document">
+            <div class="modal-content">
+                <div class="modal-header modalHeaderText @(kpiSection + "BgColor")">
+                    <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title help-title">@HelpTitle</h4>
+                </div>
+                <div id="help_@HelpKey" class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    @if (isAdmin == true && Session["impersonation"] == null)
+                    {
+                        <button type="button" class="btn btnHelp @("btnHelp" + @kpiSection)" data-dismiss="modal" onclick="window.open('content/helpEditor/helpEditor.cshtml?helpKey=' + @HelpKey)">Edit</button>
+                    }
+                    <button type="button" class="btn btnHelp @("btnHelp" + @kpiSection)" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        var url = "/img/help/help_" + @HelpKey +".html" +'?_=' + (new Date()).getTime();
+        var  divID = "#help_" + @HelpKey;
+        $(divID).load(url);
+    </script>
+}*@
+
+@*@helper kpiTitleBar(string kpiDetailDiv, string kpiTitle, string kpiValue, string kpiChange, string kpiColor) {
+
+// Adds the kpi header
+    <div class="portlet-heading bg-muted enabled" data-toggle="collapse" data-parent="#accordion1" href="#@kpiDetailDiv">
+        <h3 class="portlet-title">
+            <a class="kpiTitle" data-toggle="collapse" data-parent="#accordion1" href="#@kpiDetailDiv"><span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span><span class="padding">@kpiTitle</span></a>
+        </h3>
+        <div class="portlet-widgets">
+            <span id="ss_@kpiDetailDiv" class="kpiValue">@kpiValue</span>
+            <span id="growth_@kpiDetailDiv" class="kpiGrowth">@kpiChange</span>
+            @if (kpiColor == "") {
+                <span id="light_@kpiDetailDiv" class="fa fa-circle kpiGrey" style="font-size:16px;margin-left:5px;"></span>
+            }
+            else
+            {
+                <span id="light_@kpiDetailDiv" class="fa fa-circle @kpiColor" style="font-size:16px;margin-left:5px;"></span>
+            }
+        </div>
+        <div class="clearfix"></div>
+
+    </div>
+}*@
+
+@*@helper kpiTableHead(string kpiTitle, string kpiSection, string kpiHelpDiv, string HelpTitle,
+    string col1TitleText, string col1Title, string col1TitleClass,
+    string col2TitleText = null, string col2Title = null, string col2TitleClass = null,
+    string col3TitleText = null, string col3Title = null, string col3TitleClass = null,
+    string col4TitleText = null, string col4Title = null, string col4TitleClass = null,
+    string col5TitleText = null, string col5Title = null, string col5TitleClass = null,
+    string col6TitleText = null, string col6Title = null, string col6TitleClass = null,
+    string col7TitleText = null, string col7Title = null, string col7TitleClass = null,
+    string col8TitleText = null, string col8Title = null, string col8TitleClass = null,
+    string col9TitleText = null, string col9Title = null, string col9TitleClass = null,
+    string col10TitleText = null, string col10Title = null, string col10TitleClass = null,
+    string col11TitleText = null, string col11Title = null, string col11TitleClass = null)
+{
+var width = 0;
+switch(kpiHelpDiv)
+{
+    case "kpiHelp14":
+    case "kpiHelp10":
+        width = 180; break;
+    case "kpiHelp19":
+        width = 240; break;
+    case "kpiHelp2":
+        width = 190; break;
+    default:
+        width = 295; break;
+}
+    <thead>
+        <tr data-width="@width">
+            <th style="text-align:center">
+                <!-- Help Button -->
+                <span data-toggle="modal" data-target="#@kpiHelpDiv" title="@HelpTitle" class="glyphicon glyphicon-question-sign pull-left text-lg @(kpiSection + "Color")" style="cursor:pointer;"></span>
+                @kpiTitle
+            </th>
+            <!-- adds all the kpi's columns with the associated title.
+                'if statements' are used to check if a column exists as column count is variable -->
+            @if (col1TitleText != null){<th class="@col1TitleClass" title="@col1TitleText">@col1Title</th>}
+            @if (col2TitleText != null){<th class="@col2TitleClass" title="@col2TitleText">@col2Title</th>}
+            @if (col3TitleText != null){<th class="@col3TitleClass" title="@col3TitleText">@col3Title</th>}
+            @if (col4TitleText != null){<th class="@col4TitleClass" title="@col4TitleText">@col4Title</th>}
+            @if (col5TitleText != null){<th class="@col5TitleClass" title="@col5TitleText">@col5Title</th>}
+            @if (col6TitleText != null){<th class="@col6TitleClass" title="@col6TitleText">@col6Title</th>}
+            @if (col7TitleText != null){<th class="@col7TitleClass" title="@col7TitleText">@col7Title</th>}
+            @if (col8TitleText != null){<th class="@col8TitleClass" title="@col8TitleText">@col8Title</th>}
+            @if (col9TitleText != null){<th class="@col9TitleClass" title="@col9TitleText">@col9Title</th>}
+            @if (col10TitleText != null){<th class="@col10TitleClass" title="@col10TitleText">@col10Title</th>}
+            @if (col11TitleText != null){<th class="@col11TitleClass" title="@col11TitleText">@col11Title</th>}
+        </tr>
+    </thead>
+}*@
+
+@*@helper kpiTableBody(string kpikey, int columnCount, XmlDocument xmldata)
+{
+
+XmlNodeList tableRows = xmldata.SelectNodes("/kpidata/row[@DataType='tableData' and @KPIKey='" + kpikey + "' and @RowKey<100]");
+if (tableRows != null)
+{
+            <tbody>
+                @foreach (XmlNode row in tableRows)
+                {
+                    <tr id="row-@db.AttributeIsNull(row, "ID", "")">
+                        <td class="descriptionRow @db.AttributeIsNull(row, "Class", "")">
+                            <span class="@db.AttributeIsNull(row, "KPIColor", "") pull-right" style="margin:3px"></span>
+                            @db.AttributeIsNull(row, "RowDescription", "")
+                        </td> 
+                        @for (int y = 2; y <= columnCount; y++) // loop through and adds as many values as there are kpi columns
+                {
+                            <td id="@db.AttributeIsNull(row, "ID", "")-@y.ToString()" class="amount @db.AttributeIsNull(row, "Class", "")">@db.AttributeIsNull(row, "Col" + (y - 1), "")</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+    }
+}*@
+
+@*@helper kpiLinkedReports(string reportkey, string kpiSection, XmlDocument xmldata)
+{
+XmlNodeList linkedReports = xmldata.SelectNodes("/kpidata/row[@KPIKey='" + reportkey + "' and @DataType='LinkedReports']");
+    <ul class="nav navbar-nav hidden-xs">
+        <li class="dropdown text-center" title="Linked Reports here">
+            <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                <span class="glyphicon glyphicon-folder-open @(kpiSection + "Color")"></span>
+                <span class="padding" style="color:#888b8d;">Linked Reports</span> <span class="glyphicon glyphicon-triangle-bottom dropdownArrow" style="color:#888b8d;"></span>
+            </a>
+            <ul class="dropdown-menu linkedReports" tabindex="4999">
+                @foreach (XmlNode report in linkedReports)
+                {
+                    <li><a id="@db.AttributeIsNull(report, "ID", "")" target="_blank" href="@report.Attributes["Link_URL"].InnerText">@db.AttributeIsNull(report, "RowDescription", "")</a></li>
+                }
+            </ul>
+        </li>
+    </ul>
+}*@
+
+@*@helper kpiShowChart(string chartDiv, string chartDataTable, string chartKey, string kpiSection, XmlDocument xmldata)
+{
+if(xmldata == null) { HttpContext.Current.Trace.Warn("xmlData is null in kpiShowChart"); }
+XmlNode chartTitle = xmldata.SelectSingleNode("/kpidata/row[@KPIKey='" + chartKey + "' and @DataType='ChartTitles']");
+XmlNodeList series = xmldata.DocumentElement.SelectNodes("/kpidata/row[@KPIKey='" + chartKey + "' and @DataType='ChartData' and @RowKey>400 and @RowKey<500]");
+    <section>
+        <!-- hide the show chart button for kpis having more than one chart -->
+        @if (chartKey != "611" && chartKey != "612" && chartKey != "810" && chartKey != "6121" && chartKey != "6111")
+        {
+            <!--chart button-->
+            <button id="btn-@chartDiv" title="Show/Hide Chart" type="button" class="btn @(kpiSection + "BgColor") pull-right show-chart" onclick="ShowChart('@chartDiv')"><span class="fa fa-bar-chart padding text-white" aria-hidden="true"></span></button>
+            <div class="clearfix"></div>
+        }
+        <!-- hide the show chart button for kpis having more than one chart -->
+        @{var width = 12;}
+        @if (chartKey == "6110" || chartKey == "6120") { width = 5; } else if (chartKey == "6111" || chartKey == "6121") { width = 7; }
+        <!--chart container-->
+        <div class="chart chartBig col-sm-@width" id="@chartDiv"></div>
+
+        <!--chart data table container-->
+        <div class="hidden">
+            <table id="@chartDataTable" class="chartDataTable">
+                        <tr>
+                            <th class="chartProperties"
+                                data-charttitle="@db.AttributeIsNull(chartTitle,"Title","")"
+                                data-subtitle="@db.AttributeIsNull(chartTitle,"SubTitle","")"
+                                data-fontweight="@db.AttributeIsNull(chartTitle,"FontWeight","")"
+                                data-fontsize="@db.AttributeIsNull(chartTitle,"FontSize","")"
+                                data-primaryyaxistext="@db.AttributeIsNull(chartTitle,"PrimaryYAxisText","")"
+                                data-secondaryYaxistext="@db.AttributeIsNull(chartTitle,"SecondaryYAxisText","")"
+                                data-xaxistype="@db.AttributeIsNull(chartTitle,"XAxisType","")"
+                                data-xaxisfontsize="@db.AttributeIsNull(chartTitle,"XAxisFontSize","")"
+                                data-color="@db.AttributeIsNull(chartTitle,"Color","")"
+                                data-borderradius="@db.AttributeIsNull(chartTitle,"BorderRadius","")"
+                                data-borderwidth="@db.AttributeIsNull(chartTitle,"BorderWidth","")"
+                                data-columncount="@db.AttributeIsNull(chartTitle,"ColumnCount","")"
+                                data-switchcolumnandrows="@db.AttributeIsNull(chartTitle,"SwitchColumnAndRows","")"
+                                data-creditsenabled="@db.AttributeIsNull(chartTitle,"CreditsEnabled","")"
+                                data-secondaryyaxisopposite="@db.AttributeIsNull(chartTitle,"SecondaryYAxisOpposite","")"
+                                data-legendenabled="@db.AttributeIsNull(chartTitle,"LegendEnabled","")"
+                                data-exportbuttonenabled="@db.AttributeIsNull(chartTitle,"ExportButtonEnabled","")">@db.AttributeIsNull(chartTitle, "RowDescription", "")</th>
+
+                                @if (chartKey == "66" || chartKey == "63" || chartKey == "65" || chartKey == "67" || chartKey == "74" || chartKey == "611" || chartKey == "612" || chartKey == "73" || chartKey == "81" || chartKey == "810") // special case for YTD kpis
+                                {
+                                    <th>@db.AttributeIsNull(chartTitle, "Col1", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col2", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col3", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col4", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col5", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col6", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col7", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col8", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col9", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col10", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col11", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col12", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col13", "")</th>
+                                }
+                                else
+                                {
+                                    <th>@db.AttributeIsNull(chartTitle, "Col13", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col12", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col11", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col10", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col9", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col8", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col7", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col6", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col5", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col4", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col3", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col2", "")</th>
+                                    <th>@db.AttributeIsNull(chartTitle, "Col1", "")</th>
+                                }
+                                <th>YAxisNumber</th>
+                            </tr>
+
+                    @foreach (XmlNode serie in series)
+                    {
+                        <tr>
+                            <td>@System.Net.WebUtility.HtmlDecode(serie.Attributes["RowDescription"].InnerText)</td>
+                            <td>@db.AttributeIsNull(serie, "Col1", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col2", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col3", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col4", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col5", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col6", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col7", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col8", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col9", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col10", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col11", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col12", "")</td>
+                            <td>@db.AttributeIsNull(serie, "Col13", "")</td>
+                            <td id="@db.AttributeIsNull(serie, "ID", "")-YAxisNumber">@db.AttributeIsNull(serie, "YAxisNumber", "")</td>
+                            <td id="@db.AttributeIsNull(serie, "ID", "")-ChartType">@db.AttributeIsNull(serie, "ChartType", "")</td>
+                            <td id="@db.AttributeIsNull(serie, "ID", "")-SeriesColor">@db.AttributeIsNull(serie, "SeriesColor", "")</td>
+                            <td id="@db.AttributeIsNull(serie, "ID", "")-DataType">@db.AttributeIsNull(serie, "ChartDataType", "")</td>
+                            <td id="@db.AttributeIsNull(serie, "ID", "")-ShowVariance">@db.AttributeIsNull(serie, "ShowVariance", "")</td>
+                        </tr>
+                    }
+
+            </table>
+        </div>
+    </section>
+}*@

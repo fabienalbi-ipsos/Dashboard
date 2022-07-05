@@ -1,0 +1,140 @@
+﻿@{
+    var userKey = Request["userId"];
+    int test = int.TryParse(Request["userId"], out test) ? test : 0; //check if the value is an integer, if not returns 0.
+    dynamic user = null, currencies = null, scopes = null, roles = null;
+
+
+    if (test != 0)
+    {
+        user = db.UI_UserDefaults_Get(userKey);
+        currencies = db.UI_Currencies_GetAll(userKey);
+        scopes = db.UI_Defaults_Get(userKey, "Tree");
+        roles = db.UI_Defaults_Get(userKey, "Role_Dashboard");
+    }
+
+}
+
+<div class="panel panel-inverse">
+    @if (user == null)
+    {
+        <div class="panel-heading">
+            <h2>No user found with this userkey</h2>
+        </div>
+        <h3>Make sure to use the userkey and not the AN8 or the name (see Help for details)</h3>
+    }
+    else
+    {
+        <div class="panel-heading">
+            <h2>@user.FullName</h2>
+        </div>
+        <div class="panel-body">
+            <div>
+                <label>ID: </label>
+                <p>@user.RecordKey</p>
+            </div>
+            <br />
+            <div>
+                <label>Email: </label>
+                <p>@user.Email</p><br />
+                <label>Function Group: </label>
+                <p>@user.FunctionGroup</p><br />
+                <label>Function: </label>
+                <p>@user.Function</p><br />
+                <label>Global Title: </label>
+                <p>@user.GlobalTitle</p>
+            </div>
+            <br />
+            <div>
+                <p><u>Scopes</u></p>
+                @if (user.DefaultRole_Dashboard == null)
+                {
+                    <p>N/A</p>
+                }
+                else
+                {
+                    foreach (var scope in scopes)
+                    {
+                        if (scope.GroupKey == user.defaultScope_Dashboard)
+                        {
+                            <p><br><strong>@scope.UserGroupName (default)</strong></p>
+                        }
+                        else
+                        {
+                            <p><br>@scope.UserGroupName</p>
+                        }
+                    }
+                }
+            </div>
+            <br />
+            <div>
+                <p><u>Roles</u></p>
+                @if (user.DefaultRole_Dashboard == null)
+                {
+                    <p>N/A</p>
+                }
+                else
+                {
+                    foreach (var role in roles)
+                    {
+                        if (role.GroupKey == user.DefaultRole_Dashboard)
+                        {
+                            <p><br><strong>@role.UserGroupName (default)</strong></p>
+                        }
+                        else
+                        {
+                            <p><br>@role.UserGroupName</p>
+                        }
+                    }
+                }
+            </div>
+            <br />
+            <div>
+                <p><u>Currencies</u></p>
+                @if (currencies.Count < 30)
+                {
+                    foreach (var currency in currencies)
+                    {
+                        if (currency.CurrencyCode == user.DefaultCurrency)
+                        {
+                            <p><br><strong>@currency.CurrencyName (default)</strong></p>
+                        }
+                        else
+                        {
+                            <p><br>@currency.CurrencyName</p>
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var currency in currencies)
+                    {
+                        if (currency.CurrencyCode == user.DefaultCurrency)
+                        {
+                            <p><br /><strong>@currency.CurrencyName (default)</strong></p>
+                        }
+                    }
+                    <p><br>This user has access to all other currencies</p>
+                }
+            </div>
+
+            <a type="button" id="btnImpersonate" class="btn-admin btn-profile btn" href="debug.cshtml?userKey=@user.RecordKey" target="_blank">Debug XML</a>
+            <button type="button" id="btnImpersonate" class="btn-admin btn-profile btn" onclick="impersonate()">View as user (with default parameters)</button>
+        </div>
+    }
+   
+</div>
+
+<style>
+    div > h5,
+    div > p {
+        display: inline;
+    }
+</style>
+
+<script>
+    function impersonate() {
+        $.post("setImpersonation.cshtml?userKey=" + $('#userID').val(), function () {
+            window.location = "/Index.cshtml?BI=true";
+        });
+    }
+</script>

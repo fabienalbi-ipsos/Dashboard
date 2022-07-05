@@ -1,0 +1,9 @@
+﻿@{
+
+    var errorMessage = Request["errorMessage"];
+
+    if (errorMessage.Contains("GoToSection") == false)
+    {
+        db.UI_JavascriptError_Log(errorMessage);
+    }
+}

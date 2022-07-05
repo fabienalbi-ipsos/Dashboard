@@ -1,0 +1,13 @@
+﻿@{
+
+    HttpContext context = HttpContext.Current;
+    
+    
+    if (IsPost) {
+        chart.ChartRender chart = new chart.ChartRender();
+
+        chart.ProcessRequest(context);
+
+    }
+
+}

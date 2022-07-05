@@ -1,0 +1,61 @@
+﻿@using System.Xml;
+@{
+    KPIxml xml = new KPIxml();
+    var defaultYear = "";
+
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    
+    //which page called this control? pipeline or dashboard? 
+    var pageToLoad = PageData[0]; //pipeline passes a value in the 0 position of the PageData array ("pipeline")
+    if (pageToLoad == null){//called from the dashboard which doesn't pass any page data
+        pageToLoad = "";
+        }
+
+
+    XmlNodeList years = data.SelectNodes("/kpidata/row[@DataType='Controls' and @ParameterType='3']");
+
+    defaultYear = db.AttributeIsNull(data.SelectSingleNode("/kpidata/row[@DataType='Controls' and @ParameterType='3' and @isDefault='1']"),"ParameterValueName","");
+}
+
+<li class="dropdown" title="Year">
+    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+        <span id="selectedYear">@defaultYear</span> <span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span>
+    </a>
+    <ul id="yearDropDown" class="dropdown-menu pro-menu " >
+        @foreach (XmlNode year in years)
+        {
+            if(Convert.ToInt32(db.AttributeIsNull(year,"ParameterValue","")) <= DateTime.Now.Year) { 
+                <li><a id="@db.AttributeIsNull(year,"ParameterValue","")" href="#">@db.AttributeIsNull(year,"ParameterValue","")</a></li>
+            }
+            else { break; }
+        }
+    </ul>
+</li>
+<script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+<script>
+    //update the selected year displayed to the user
+    $('#yearDropDown li a').one('click', function () {
+        $('#dashboardNavBar').hide();
+        $("#content").html('<h2 class="text-center" style="font-size:40px;"><i id="spinner" class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#5e5e5e;"></i> Loading...</h2> ');
+        var year = $(this).attr('id');
+
+        $('#selectedYear').text($(this).attr('id'));
+
+        //Add here a step to update the parameters for the user
+        var UpdateControl = "../content/controls/UpdateControl?parameterType=3&parameterValue=" + year; 
+        $.post(UpdateControl, function () {
+
+            //get the value from Razor variable
+            var pageToLoad = "@pageToLoad"; //to call a Razor variable, use the atSign and surround in quotes (if its a string)
+
+            if (pageToLoad == "pipeline") {
+                window.location = 'pipeline.cshtml?BI=true';
+            }
+            else {
+                window.location = 'Index.cshtml?BI=true';
+            }
+        });
+
+    });
+</script>

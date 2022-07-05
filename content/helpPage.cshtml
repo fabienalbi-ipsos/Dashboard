@@ -1,0 +1,76 @@
+﻿@{
+    var helpKey = Request["helpKey"];
+    var userKey = db.GetUserKey();
+
+    if (userKey == null || userKey == "0") {
+        //send user to login page if not logged in
+        Response.Redirect("Default.cshtml");
+    }
+
+    string title = "";
+
+    if (helpKey != null && helpKey !="0")
+    {   //we have a help key to display
+        var record = db.UI_HelpContent_Get(helpKey);
+        title = record.HelpTitle.ToString();
+    }
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BI Help Page</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+    <link href="/css/appStyle.css" rel="stylesheet">
+    <link href="/css/dashboard.css?random=10" rel="stylesheet">
+
+    <!--Icon-fonts css-->
+    <link href="/assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
+    <link href="/assets/ionicon/css/ionicons.min.css" rel="stylesheet" />
+
+    <script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+    <script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+    <script src="/js/helpEditor.js"></script>
+</head>
+<body>
+    <div id="help-title" class="alert">
+        <h4>@title</h4>
+    </div>
+    <div id="help-body">
+    </div>
+</body>
+</html>
+
+<script>
+    $(document).ready(function () {
+        var dbBMRFMRHelp = "/img/help/help_" + @helpKey + ".html" + '?_=' + (new Date()).getTime();
+        //load BMR / FMR help content
+        $("#help-body").load(dbBMRFMRHelp);
+    });
+</script>
+
+<style>
+    body {
+        padding: 30px;
+        color: rgb(136, 139, 141);
+        font-family: Calibri;
+        max-width: 1200px;
+    }
+
+    p {
+        color: rgb(136, 139, 141);
+    }
+
+    #help-title {
+        background-color: #1b365d;
+    }
+
+    #help-title > h4 {
+        color: white;
+        font-family: calibri;
+        font-weight: bold;
+        margin-bottom: 0px;
+    }
+</style>

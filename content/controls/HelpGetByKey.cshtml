@@ -1,0 +1,16 @@
+﻿@{
+    var helpKey = Request["helpKey"];
+
+
+    var HelpContentHTML = "";
+    if(helpKey != null) {
+        var help = db.UI_HelpContent_Get(helpKey.ToString());
+        HelpContentHTML = help.HelpContentHTML;
+    }
+}
+
+    @Html.Raw(@HelpContentHTML)
+
+
+
+

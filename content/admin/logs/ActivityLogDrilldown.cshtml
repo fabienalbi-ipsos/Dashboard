@@ -1,0 +1,97 @@
+﻿@{
+    Page.Title = "Activity Log Drilldown";
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+    var type = Request["Type"];
+    var activity = Request["Activity"] == null ? "All" : Request["Activity"];
+    
+    var records = db.UI_UserActivityLog_GetByType(type, activity);
+}
+
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+
+    <!--Dashboard custom styles-->
+    <link href="/css/dashboard.css?random=1022" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.css" />
+    <link href="/css/font-awesome.min.css" rel="stylesheet" /> <!-- font-awesome.css 4.7.0 -->
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+</head>
+
+<body>
+    <h1 class="page-header" style="margin-left:10px;">Activity Log Drilldown<small>    Type: @type, Name: @activity</small></h1>
+    <div>
+        <table id="main-table" class="table table-hover table-bordered security-table">
+            <thead style="font-weight:bold;font-size:12px">
+                <tr>
+                    <th>BI User ID</th>
+                    <th>Name</th>
+                    <th>Function Group</th>
+                    <th>Function</th>
+                    <th>Global Title</th>
+                    <th>Role Name</th>
+                    <th>Scope Name</th>
+                    <th>Today</th>
+                    <th>This Month</th>
+                    <th>YTD</th>
+                    <th>LTD</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var record in records)
+                {
+                    <tr>
+                        <td>@record.UserKey</td>
+                        <td><a href="../userAdmin/userAdmin.cshtml?userId=@record.UserKey" target="_blank">@record.FullName</a></td>
+                        <td>@record.FunctionGroup</td>
+                        <td>@record.Function</td>
+                        <td>@record.GlobalTitle</td>
+                        <td>@record.RoleName</td>
+                        <td>@record.ScopeName</td>
+                        <td>@record.Today</td>
+                        <td>@record.CurrentMonth</td>
+                        <td>@record.YTD</td>
+                        <td>@record.LTD</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</body>
+
+<script>
+    $(document).ready(function () {
+        var date = new Date();
+        $('#main-table').DataTable({
+            fixedHeader: true,
+            paging: false,
+            "oSearch": {
+                "bSmart": false,
+                "bRegex": true,
+                "sSearch": ""
+            },
+            "order": [[ 10, "desc" ]],
+            dom: 'Bfrtip',
+            buttons: [
+                'copyHtml5',
+                {
+                    extend: 'excelHtml5',
+                    filename: 'Activity_Log_' + date.toLocaleDateString()
+                },
+            ]
+        });
+    });
+</script>

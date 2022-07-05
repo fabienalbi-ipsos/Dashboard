@@ -1,0 +1,116 @@
+﻿@{
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+    var records = db.UI_UserActivityLog_GetAll();
+}
+<head>
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.css" />
+
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.js"></script>
+</head>
+
+<body>
+    <h1 class="page-header" style="margin-left:10px;">Activity Stats <small>excluding Dashboard Admins</small></h1>
+    <div>
+        @if (records.Count != 0)
+        {
+            <table id="main-table" class="table log-table" style="font-size:8pt">
+                <thead style="font-weight:bold">
+                    <tr>
+                        <td>Activity Type</td>
+                        <td>Activity Name</td>
+                        <td>Today</td>
+                        <td>Current Month</td>
+                        <td>YTD</td>
+                        <td>LTD</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var record in records)
+                {
+                        <tr>
+                            <td><a href="ActivityLogDrilldown.cshtml?Type=@record.Category" target="_blank">@record.Category</a></td>
+                            <td><a href="ActivityLogDrilldown.cshtml?Type=@record.Category&Activity=@record.Name" target="_blank">@record.Name</a></td>
+                            <td>@record.Today</td>
+                            <td>@record.CurrentMonth</td>
+                            <td>@record.YTD</td>
+                            <td>@record.LTD</td>
+                        </tr>
+                    }
+
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <h3>No activies recorded for this user</h3>
+        }
+    </div>
+    <script>
+        $(document).ready(function () {
+            var date = new Date();
+            $('#main-table').DataTable({
+                fixedHeader: true,
+                paging: false,
+                "oSearch": {
+                    "bSmart": false,
+                    "bRegex": true,
+                    "sSearch": ""
+                },
+                dom: 'Bfrtip',
+                buttons: [
+                    'copyHtml5',
+                    {
+                        extend: 'excelHtml5',
+                        filename: 'Activity_Stats' + date.toLocaleDateString()
+                    },
+                ]
+            });
+            var sum = 0, size = 0, avg = 0, heat = 0;
+            for (var i = 3; i <= 6; i++) {
+                sum = 0;
+                $('tbody > tr > td:nth-child(' + i +')').each(function () { sum += parseInt($(this).text()) })
+                size = $('tbody > tr > td:nth-child(' + i +')').length;
+                avg = sum / size;
+
+                $('tbody > tr > td:nth-child(' + i +')').each(function () {
+                    heat = parseInt($(this).text()) / avg;
+                    switch (true) {
+                        case (heat > 0.25 && heat <= 0.5):
+                            $(this).css('background-color', '#FFDBDC');
+                            break;
+                        case (heat > 0.5 && heat <= 0.75):
+                            $(this).css('background-color', '#FFC1C3');
+                            break;
+                        case (heat > 0.75 && heat <= 1):
+                            $(this).css('background-color', '#FFA8AA');
+                            break;
+                        case (heat > 1 && heat <= 1.5):
+                            $(this).css('background-color', '#FF8E92');
+                            break;
+                        case (heat > 1.5 && heat <= 2):
+                            $(this).css('background-color', '#FF7579');
+                            break;
+                        case (heat > 2):
+                            $(this).css('background-color', '#FF5C61');
+                            break;
+                    }
+                });
+            }
+        });
+    </script>
+</body>

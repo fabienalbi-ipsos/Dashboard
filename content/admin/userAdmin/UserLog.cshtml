@@ -1,0 +1,74 @@
+﻿@{
+
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+    dynamic records;
+
+    if (Request["runDate"] != null)
+    {
+        records = db.GetPageLog_byDate(Request["runDate"]);
+    }
+
+    else {
+        records = db.GetPageLog(Request["userId"]);
+    }
+}
+
+<link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+
+<div>
+    <table class="table table-striped log-table" style="font-size:8pt">
+        <thead style="font-weight:bold">
+            <tr>
+                <td>Record Key</td>
+                <td>User Key</td>
+                <td>Full Name</td>
+                <td>Role Key</td>
+                <td>Scope</td>
+                <td>Year</td>
+                <td>Period</td>
+                <td>Currency</td>
+                <td>RateType</td>
+                <td>Rounding</td>
+                <td>Status</td>
+                <td>Start Time</td>
+                <td>Duration</td>
+                <td>Page</td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in records)
+            {
+                <tr>
+                    <td>@record.RecordKey</td>
+                    <td><a href="userAdmin.cshtml?userID=@record.UserKey" target="_blank">@record.UserKey</td>
+                    <td>@record.FullName</td>
+                    <td>@record.RoleKey</td>
+                    <td>@record.Scope</td>
+                    <td>@record.Year</td>
+                    <td>@record.Period</td>
+                    <td>@record.Currency</td>
+                    <td>@record.RateType</td>
+                    <td>@record.Rounding</td>
+                    <td>@record.Status</td>
+                    <td>@record.StartTime.ToString("MMM dd, yyyy hh:mm:ss tt")</td>
+                    <td>@record.Duration</td>
+                    <td>@record.PageName</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

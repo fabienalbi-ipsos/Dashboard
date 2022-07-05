@@ -1,0 +1,5 @@
+﻿@{
+    bool validated = Request["validated"] == "true" ? true : false;
+    bool setupvalidated = Request["setupvalidated"] == "true" ? true : false;
+    db.Admin_UserSetup_Comment_Set(Request["userID"], Request["comment"], Request["adminKey"], validated, setupvalidated);
+}

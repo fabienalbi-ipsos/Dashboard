@@ -1,0 +1,99 @@
+﻿@{
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+    var records = db.Admin_Upload_UserSetup();
+}
+
+<link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+<link href="/css/bootstrap-reset.css" rel="stylesheet">
+
+<!--Dashboard custom styles-->
+<link href="/css/dashboard.css?random=10" rel="stylesheet" />
+<h1 class="page-header" style="margin-left:10px;">User Setup</h1>
+
+<table>
+    <tbody>
+        <tr>
+            <td style="background-color:#ecc9b1">Not OK + Warnings or Comments</td>
+            <td style="background-color:#ffffc2">Setup OK only</td>
+            <td style="background-color:#99c9e5">Tech OK only</td>
+            <td style="background-color:#ccecb1">Setup and Tech OK</td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="width:60%">
+    <table class="table table-hover table-bordered  dashboard-table" style="font-size:10pt">
+        <thead style="font-weight:bold">
+            <tr>
+                <th>Full Name</th>
+                <th>User Key</th>
+                <th>AN8</th>
+                <th>Function Group</th>
+                <th>Function</th>
+                <th>Global Title</th>
+                <th>Default Scope</th>
+                <th>Default Role</th>
+                <th>Default Currency</th>
+                <th>Has Group</th>
+                <th>Has CFO</th>
+                <th>Has RM</th>
+                <th>Has CCM</th>
+                <th>Has BUM</th>
+                <th>Has WM</th>
+                <th style="width:300px;text-align:left">Warning(s)</th>
+                <th>Session Disallowed</th>
+                <th>Comments</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in records)
+            {
+                string bgColor = "white";
+                if (record.Validated == true && record.SetupValidated == true) { bgColor = "#ccecb1"; } // green
+                else if (record.Validated == true && record.SetupValidated == false) { bgColor = "#99c9e5"; } // blue
+                else if (record.Validated == false && record.SetupValidated == true) { bgColor = "#ffffc2"; } // yellow
+                else if (record.Comments != null || record.Comment != null) { bgColor = "#ecc9b1"; }
+                <tr style="background-color:@bgColor">
+                    <td><div style="width:200px"><a href="../userAdmin/userAdmin.cshtml?userId=@record.UserKey" target="_blank">@record.FullName</a></div></td>
+                    <td>@record.UserKey</td>
+                    <td>@record.AN8</td>
+                    <td>@record.FunctionGroup</td>
+                    <td>@record.Function</td>
+                    <td>@record.GlobalTitle</td>
+                    <td>@record.ScopeName</td>
+                    <td>@record.RoleName</td>
+                    <td>@record.DefaultCurrency</td>
+                    @if (record.HasGroup == true) { <td title="Group">✔</td> } else { <td title="Group"></td> }
+                    @if (record.HasCFO == true) { <td title="CFO">✔</td> } else { <td title="CFO"></td> }
+                    @if (record.HasRM == true) { <td title="RM">✔</td> } else { <td title="RM"></td> }
+                    @if (record.HasCCM == true) { <td title="CCM">✔</td> } else { <td title="CCM"></td> }
+                    @if (record.HasBUM == true) { <td title="BUM">✔</td> } else { <td title="BUM"></td> }
+                    @if (record.HasWM == true) { <td title="WM">✔</td> } else { <td title="WM"></td> }
+                    <td><div style="width:300px;text-align:left">@record.Comments</div></td>
+                    @if (record.SessionAllowed != 1) { <td>✘</td> } else { <td></td> }
+                    <td><div style="width:300px;text-align:left">@record.Comment</div></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>     
+    a {
+        color: #337ab7;
+    }
+</style>

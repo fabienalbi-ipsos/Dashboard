@@ -1,0 +1,285 @@
+﻿@{
+    var records = db.UI_HelpContent_GetAll();
+    var helpCategories = db.UI_Help_Categories_GetAll();
+    var helpKey = Request["helpKey"];
+    string content = "<h3>Welcome to the help content editor</h3>";
+    var title = "Title Goes Here";
+    var userKey = db.GetUserKey();
+
+    if (userKey == null) { Response.Redirect("Default.cshtml"); }
+
+
+    var category = 0;
+
+
+    if (helpKey != null && helpKey !="0")
+    {   //we have a help key to view or edit
+        var record = db.UI_HelpContent_Get(helpKey);// content = find specific row with helpKey and return the content
+        category = record.CategoryKey;
+        content = record.HelpContentHTML;
+        title = record.HelpTitle;
+    }
+
+    if (IsPost)
+    {
+
+        helpKey = Request.Form["helpKey"];
+        var helpTitle = Request.Form["helpTitle"];
+        var helpContent = Request.Unvalidated("help-editor");
+        userKey = Request.Form["userKey"];
+        var categoryKey = Request.Form["categoryKey"];
+
+        db.UI_HelpContent_Set(userKey, helpKey, helpTitle, helpContent, categoryKey);
+    }
+
+    //prevent access to non-admin users
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BI Help Editor</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+    <link href="/css/helpEditor.css" rel="stylesheet">
+    <link href="/css/appStyle.css" rel="stylesheet">
+    <link href="/css/helpEditorCustom.css" rel="stylesheet">
+    <link href="/css/dashboard.css?random=10" rel="stylesheet">
+
+    <!--Icon-fonts css-->
+    <link href="/assets/font-awesome/css/font-awesome.css" rel="stylesheet" />
+    <link href="/assets/ionicon/css/ionicons.min.css" rel="stylesheet" />
+
+
+    <script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+    <script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+    <script src="/js/helpEditor.js"></script>
+</head>
+<body>
+        <!-- Static navbar -->
+    <nav class="navbar navbar-default navbar-fixed-top" id="dashboardNavBar">
+        <div class="container-fluid">
+            <!--Navbar Header Hamburger-->
+            <div class="navbar-header">
+                <img src="~/img/icon-16x6-spc-0.gif" style="float:left;margin-top:13px;margin-left:5px;width:25px; height:25px;" />
+                <a class="navbar-brand" href="/index.cshtml">
+                    <span>
+                        <strong>BI Business Dashboard</strong>
+                    </span>
+                </a>
+                <section class="navbar-form navbar-left">
+                    <div class="form-group">
+                        <select class="form-control" id="help-content">
+                            <option value="0">Select a help page to edit</option>
+                            @foreach (var record in records)
+                            {
+                                if(record.helpKey != @helpKey) { 
+                                <option value="@record.HelpKey">[@record.Category] @record.HelpTitle</option>
+                                }
+                                else
+                                {
+                                    <option selected="selected" value="@record.HelpKey">[@record.Category] @record.HelpTitle</option>
+                                }
+                            }
+                        </select>
+                        <select class="form-control" id="help-category">
+                            <option value="">All Categories</option>
+                            @foreach (var helpCategory in helpCategories)
+                            {
+                                {
+                                    <option value="@helpCategory.CategoryName">@helpCategory.CategoryName</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </section>
+                <span class="navbar-right">                    
+                    <button class="btn-help-editor btn" onclick="saveHelpContent()">Save</button>
+                    <button class="btn-help-editor btn" onclick="deleteHelpContent()">Delete</button>
+                    <button class="btn-help-editor btn" onclick="newHelpContent()">New</button>
+                    <span id="saving"><i class="fa fa-refresh fa-spin hidden"></i>Saving...</span>
+                    <span id="deleting"><i class="fa fa-refresh fa-spin hidden"></i>Deleting...</span>
+                    <img src="~/img/green-dot.png" />
+                    <img src="~/img/yellow-dot.png" />
+                    <img src="~/img/red-dot.png" />
+                </span>
+            </div>
+        </div><!--/.container-fluid -->
+    </nav>
+    <div id="my-toolbar"></div>
+    <div class="col-md-7 help-editor-top">
+        <div class="col-sm-9">
+            <input type="text" class="form-control" id="help-title" name="helpTitle" form="editor" placeholder="Help title..." value="@title" />
+        </div>
+        <div class="col-sm-3">
+            <select class="form-control" id="categoryKey" name="categoryKey" form="editor">
+                <option value="0">Select a category</option>
+                @foreach (var helpCategory in helpCategories)
+            {
+                if (helpCategory.CategoryKey != @category)
+                {
+                        <option value="@helpCategory.CategoryKey">@helpCategory.CategoryName</option>
+                    }
+                    else
+                    {
+                        <option selected="selected" value="@helpCategory.CategoryKey">@helpCategory.CategoryName</option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+        <div class="form-group col-md-7">
+            <form id="editor" name="editor" method="post">
+                <input type="hidden" id="helpKey" name="helpKey" value="@helpKey" />
+                <input type="hidden" id="userKey" name="userKey" value="@userKey" />
+                <textarea id="help-editor" name="help-editor">@Html.Raw(@content)</textarea>
+            </form>
+        </div>
+        <div id="preview" class="col-md-5">
+            <h3>Help preview</h3>
+            <div class="modal-content help-preview">
+                <div class="modal-header help-preview modalHeaderText clientBgColor">
+                    <h4 class="modal-title help-preview">@title</h4>
+                </div>
+                <div class="modal-body help-preview">
+                    @Html.Raw(@content)
+                </div>
+            </div>
+        </div>
+
+        <script>
+            $(document).ready(function () {
+                $("#saving, #deleting").hide();
+
+                $('#help-editor').summernote(
+                     {
+                         toolbar: [
+                             ['fontsize', ['fontsize']],
+                             ['style', ['style']],
+                             ['style', ['bold', 'italic', 'underline', 'clear']],
+                             ['fontname', ['fontname']],
+                             ['color', ['color']],
+                             ['para', ['ul', 'ol', 'paragraph']],
+                             ['table', ['table']],
+                             ['insert', ['link', 'picture', 'video']],
+                             ['misc', ['fullscreen', 'codeview', 'undo', 'redo', 'help']]
+                         ],
+                         popover: {
+                             image: [
+                               ['imagesize', ['imageSize100', 'imageSize75', 'imageSize50', 'imageSize25']],
+                               ['float', ['floatLeft', 'floatRight', 'floatNone']],
+                               ['remove', ['removeMedia']]
+                             ]
+                         },
+                         fontNames: ['Calibri', 'Helvetica'],
+                         toolbarContainer: '#my-toolbar',
+                         minHeight: 500,
+                         focus: true,
+                         callbacks: {
+                             onImageUpload: function (image) {
+                                 uploadImage(image[0]);
+                             }
+                         }
+                     }
+                );
+                $('#help-editor').summernote('code');
+
+                updateTitle();
+
+                $('.note-editor').on('keyup click', function () { //update the help modal preview after any change
+                    var newContent = $('#help-editor').summernote('code');
+                    $('.modal-body.help-preview').html(newContent);
+                });
+
+                $('#help-title, #categoryKey').on('keyup click', updateTitle)
+
+                $('#help-content').change(function editHelpContent() {
+                    var helpKey = $('#help-content').val();
+                    window.location.href = "helpEditor.cshtml?helpKey=" + helpKey;
+                    return false;
+                })
+
+                //hides dropdown help items if they are not of the selected category
+                $('#help-category').change(function () {
+                    var selected = $("#help-category option:selected").text() //grab the selected category name
+                    $("#help-content option").each(function () {
+                        if (selected == 'Filter by category') { $(this).show() } //if it is the default option then show all help items
+                        else {
+                            var regex = new RegExp(selected + ']', "g");
+                            if (regex.test($(this).text()) != true) { $(this).hide() }
+                            else { $(this).show() }
+                        }
+                    });
+                })
+            });
+
+            function newHelpContent() {
+                $('#help-editor').summernote('code', '');
+                var helpKey = "0";
+                window.location.href = "helpEditor.cshtml?helpKey=" + helpKey;
+            }
+
+            function saveHelpContent() {
+                var content = $('#help-editor').summernote('code');
+                var helpKey = $('#help-content').val();
+                if ($('#categoryKey').val() == '0') {
+                    alert('You must select a category')
+                } else {
+                    $("#saving").show();
+                    $.post("helpEditor.cshtml", $("#editor").serialize(), function () {
+                        window.location.href = "helpEditor.cshtml?helpKey=" + helpKey;
+                        $("#saving").hide();
+                    });
+                }
+            }
+
+            function deleteHelpContent() {
+                var helpKey = $('#help-content').val();
+                if (confirm('Are you sure you want to permanently delete the following record?\n - ' + $('#help-content option:selected').text())) {
+                    $("#deleting").show();
+                    $.post("helpDelete?helpKey=" + helpKey, function () {
+                        window.location.href = "helpEditor.cshtml"
+                    })
+                }
+            }
+
+            function updateTitle() {
+                var newTitle = $('#help-title').val();
+                var newCategory = $("#categoryKey option:selected").text();
+                $('.modal-title.help-preview').text('[' + newCategory + '] ' + newTitle);
+            }
+
+            function uploadImage(image) {
+                var data = new FormData();
+                data.append("image", image);
+                $.ajax({
+                    data: data,
+                    type: "POST",
+                    url: "imageUpload.cshtml",
+                    cache: false,
+                    contentType: false,
+                    processData: false,
+                    success: function (url) {
+                        $('#help-editor').summernote("insertImage", url);
+                    }
+                });
+            }
+        </script>
+</body>
+</html>

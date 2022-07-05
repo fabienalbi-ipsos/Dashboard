@@ -1,0 +1,70 @@
+﻿@using System.Xml;
+
+@{
+
+    /*
+
+        get the list of currencies from the db
+     */
+
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    //which page called this control? pipeline or dashboard? 
+    var pageToLoad = PageData[0]; //pipeline passes a value in the 0 position of the PageData array ("pipeline")
+    if (pageToLoad == null)
+    {//called from the dashboard which doesn't pass any page data
+        pageToLoad = "";
+    }
+
+    XmlNodeList currencies = data.SelectNodes("/kpidata/row[@DataType='Controls' and @ParameterType='5']");
+
+    var defaultCurrency = "";
+    defaultCurrency = db.AttributeIsNull(data.SelectSingleNode("/kpidata/row[@DataType='Controls' and @ParameterType='5' and @isDefault='1']"),"ParameterValue","");
+
+}
+
+<li class="dropdown" title="Currency">
+        <a data-toggle="dropdown" class="dropdown-toggle" href="#"><span id="selectedCurrency">@defaultCurrency</span> <span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span></a>
+
+    <ul id="currencyDropDown" class="dropdown-menu" >
+        @foreach (XmlNode currency in currencies)
+        {
+            <li><a id="@db.AttributeIsNull(currency,"ParameterValue","")" href="#">@db.AttributeIsNull(currency,"ParameterValueName","")</a></li>
+            }
+        
+    </ul>
+</li>
+<script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+<script>
+
+        //update the selected currency displayed to the user
+    $('#currencyDropDown li a').one('click', function () {
+            $('#dashboardNavBar').hide();
+            $("#content").html('<h2 class="text-center" style="font-size:40px;"><i id="spinner" class="fa fa-circle-o-notch fa-spin" style="font-size:40px;color:#5e5e5e;"></i> Loading...</h2> ');
+            $('#selectedCurrency').text($(this).attr('id'));
+
+            var currency = $(this).attr('id')
+
+            //Add here a step to update the parameters for the user
+            var UpdateControl = "../content/controls/UpdateControl?parameterType=5&parameterValue=" + currency;
+            $.post(UpdateControl, function () {
+
+                 //get the value from Razor variable
+                var pageToLoad = "@pageToLoad"; //to call a Razor variable, use the atSign and surround in quotes (if its a string)
+
+                if (pageToLoad === "pipeline") {
+                    window.location = 'pipeline.cshtml?BI=true';
+                }
+                else {
+                    window.location = 'Index.cshtml?BI=true';
+                }
+            });
+
+
+        });
+ 
+
+        
+
+    
+</script>

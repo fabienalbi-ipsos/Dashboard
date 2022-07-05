@@ -1,0 +1,8 @@
+﻿@{
+    var helpKey = "1140";
+    var help = db.UI_HelpContent_Get(helpKey);
+}
+
+<h1>@help.HelpTitle</h1>
+
+@Html.Raw(help.HelpContentHTML)

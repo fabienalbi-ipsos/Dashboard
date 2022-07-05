@@ -1,0 +1,4 @@
+﻿@{
+        string UserKey = Request["UserKey"], Role = Request["Role"];
+        db.Admin_UserRoles_Set(UserKey, Role);
+}

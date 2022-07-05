@@ -1,0 +1,83 @@
+﻿@{
+    string userKey = Request["userId"];
+    int test = int.TryParse(Request["userId"], out test) ? test : 0;//check if the value is an integer, if not returns 0.
+    dynamic parameters = null, log = null;
+
+    if (test != 0)
+    {
+        parameters = db.UI_UserParameters_Get(userKey);
+        log = db.UI_LogHits_Get(userKey);
+    }
+}
+
+<div class="panel panel-inverse">
+    <div class="panel-heading">
+        <h2>Stats</h2>
+    </div>
+    @if (log != null)
+    {
+        <div class="panel-body">
+            <label>Last connection:</label>
+            <p>@log.LastLoginDate.ToString("MMM dd, yyyy hh:mm:ss tt") (UK Time)</p><br />
+            <label>Most recent parameters</label>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <td>Scope</td>
+                        <td>Year</td>
+                        <td>Month</td>
+                        <td>Currency</td>
+                        <td>Type</td>
+                        <td>Rounding</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                    @foreach (var parameter in parameters)
+                    {
+                        if (parameter.ParameterType != 0 && //hide user name
+                            parameter.ParameterType != 1 && //hide default dashboard role
+                            parameter.ParameterType != 8 && //hide tree type
+                            parameter.ParameterType != 9 && //hide last ETL Refresh
+                            parameter.ParameterType != 10 && //hide Session Key 
+                            parameter.ParameterType != 11 &&//hide default scope
+                            parameter.ParameterType != 12 && //hide default currency
+                            parameter.ParameterType != 13 && //hide Session Key 
+                            parameter.ParameterType != 14 &&//hide default scope
+                            parameter.ParameterType != 15 //hide default currency
+                            )
+                        {
+                            <td>@parameter.ParameterValueName</td>
+                        }
+                    }
+                    </tr>
+                </tbody>
+            </table>
+            <label>Page Views</label>
+            <table class="table table-striped page-views">
+                <thead>
+                    <tr>
+                        <td>Current Month</td>
+                        <td>Last Month</td>
+                        <td>Year to date</td>
+                        <td>Life to date</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>@log.currentMonth</td>
+                        <td>@log.lastMonth</td>
+                        <td>@log.YTD</td>
+                        <td>@log.LTD</td>
+                    </tr>
+                </tbody>
+            </table>
+            <a type="button" id="btnActivityLog" class="btn-admin btn-profile btn" href="../logs/ActivityLog.cshtml?userId=@userKey" target="_blank">User Activity Log</a>
+            <a type="button" id="btnLog" class="btn-admin btn-profile btn" href="UserLog.cshtml?userId=@userKey" target="_blank">Get User Log</a>
+        </div>
+    }
+    else
+    {
+        <h3>No record found</h3>
+    }
+</div>

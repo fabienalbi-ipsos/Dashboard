@@ -1,0 +1,326 @@
+﻿@using System;
+@using System.DirectoryServices;
+
+@{
+
+
+
+
+
+    //reset the userKey in the session object to null
+    Session["userKey"] = null;
+
+    //expire the session Key cookie
+    if (Request.Cookies["sessionKey"] != null)
+    {
+        Response.Cookies["sessionKey"].Expires = DateTime.Now.AddDays(-1);
+    }
+
+    //reset session variables so new content gets loaded on the Index page
+    Session["tree"] = null; //this will be reloaded on the trees.cshtml page
+    Session["impersonation"] = null; //used while an admin runs the 'View As' feature
+
+    //expire the cookie role. This will be reloaded on the index page
+    if (Request.Cookies["role"] != null)
+    {
+        Response.Cookies["role"].Expires = DateTime.Now.AddDays(-1);
+    }
+
+
+    //prepare for an incoming login request from BI
+    var bi_recordKey = "0";
+    var v_userKey = "0";
+    bi_recordKey = Request["recordKey"];
+
+    var pageToLoad = "";    //which page is being called? dashboard or pipeline
+
+    pageToLoad = Request["page"];
+
+
+    //User came from BI. decrypt the recordKey to get the userKey
+    if(bi_recordKey != "0" && bi_recordKey !=null) {
+        var bi_Sessionkey_decrypt = db.BI_Decrypt(bi_recordKey);    //decrypt the session key value coming from BI
+        string[] v_cookieParts = bi_Sessionkey_decrypt.Split(';');  //create an array of the two parts to the object
+        v_userKey = int.Parse(v_cookieParts[0]).ToString();         //Get the userKey from the first position
+        var v_guid = new Guid(v_cookieParts[1]);                    //not using this value for anything at the moment
+    }
+    else
+    {
+        if (Request.Url.Authority == "bidev3.ipsos") { Response.Redirect("https://bidev.ipsos.com"); }
+        else if (Request.Url.Authority == "dashboard-bidev.ipsos.com") { Response.Redirect("https://bidev.ipsos.com"); }
+        else if (Request.Url.Authority == "dashboard-bi.ipsos.com") { Response.Redirect("https://bi.ipsos.com"); }
+        else if (Request.Url.Authority == "bidashboard.ipsos") { Response.Redirect("https://bi.ipsos.com"); }
+        else if (Request.Url.Authority == "dashboard-bitest.ipsos.com") { Response.Redirect("https://bitest.ipsos.com"); }
+    }
+
+    //prepare for a login via the login form
+    var domain = "";
+    var username = "";
+    var password = "";
+    var activeDirectoryServerDomain = "";
+    var response = "Sign in with your Ipsos network credentials";
+    var remember = "on";
+    var userKey = "0";
+
+    //get the stored cookie values for login (if the user checked the Remember me option)
+    HttpCookie usernameCookieRequest = Request.Cookies["username"];
+    HttpCookie domainCookieRequest = Request.Cookies["domain"];
+
+    //user clicks the sign in button
+    if (IsPost)
+    {
+        domain  = Request.Form["domain"];
+        username = Request.Form["userName"];
+        password = Request.Form["password"];
+        remember = Request.Form["remember"];
+        //get the name of the active directory server from DB_MetaData table
+        activeDirectoryServerDomain = db.UI_MetaData_Get("ActiveDirectory", domain);
+
+        var authorized = false; //assume not authorized
+        var AddressBookID = "0";    //we will look up a value for this from the active directory search
+
+        try
+        {
+            if (domain != "bi") //only use this method below for active directory login (not used for bi authentication)
+            {
+                //query active directory to check if the credentials are valid
+                DirectoryEntry de = new DirectoryEntry("LDAP://" + activeDirectoryServerDomain, String.Concat(domain, @"\", username), password);
+                DirectorySearcher ds = new DirectorySearcher(de);
+
+                //find a result based on the samAccountName
+                ds.Filter = String.Concat("(SAMAccountName=", username, ")");
+
+                //get the Address Book ID (AN8)
+                ds.PropertiesToLoad.Add("employeeID");
+                ds.FindOne();
+                SearchResult result = ds.FindOne();
+
+                if (result != null)
+                {//we have a valid record from active directory search
+                    authorized = true;
+                    AddressBookID = (string)result.Properties["employeeID"][0];
+
+                    //look up the user Key in Users table based on the validated address book ID
+                    userKey = db.UI_GetUserKey_FromAN8(AddressBookID);
+                }
+            }
+            else
+            {
+                //BI authentication
+                //not doing any decryption of the password, so user must enter encrypted password.
+                //we didn't bother to write any decryption here because we are not going to allow for BI authentication into dashboads
+                var result = db.UI_AuthenticateUser_From_BIAuthentication(username, password);
+                if (result != "0")
+                {
+                    authorized = true;
+
+                    //get the user Key based on the validated username result
+                    userKey = result;
+                }
+
+            }
+
+            //if there is a record in Active Directory then the user credentials are good
+            //if there is a user key from the BI Authentication login then the user credentials are good
+            if (authorized == true)
+            {
+
+                //save a cookie for login details
+                if (remember == "on") //on by default
+                {
+                    //if the user checked the remember me option, save a cookie
+                    HttpCookie usernameCookie = new HttpCookie("username");
+                    usernameCookie.Value = username;
+                    usernameCookie.Expires = DateTime.Now.AddDays(60d);
+                    Response.Cookies.Add(usernameCookie);
+
+                    HttpCookie domainCookie = new HttpCookie("domain");
+                    domainCookie.Value = domain;
+                    domainCookie.Expires = DateTime.Now.AddDays(60d);
+                    Response.Cookies.Add(domainCookie);
+                }
+
+                //save the session key in a cookie so we can avoid making the user log in again
+                //SessionKey is the recordKey from the SessionLog table entry inserted by UI_Session_Start
+                HttpCookie myCookie = new HttpCookie("sessionKey");
+                var sessionKey = db.UI_Session_Start(userKey);
+                myCookie.Value = sessionKey;
+                myCookie.Expires = DateTime.Now.AddDays(60d);
+                Response.Cookies.Add(myCookie);
+
+                //before we let them in, check if they should be allowed in yet
+                if (userKey != "0")
+                {
+
+                    if (Request["status"] == "notauthorized") //non-admin user trying to access app admin or user admin pages are redirect here
+                    {
+                        response = "You must be an admin to access this page";
+                    }
+                    else
+                    {   //this user is allowed in, and the dashboard is open for business
+                        if (pageToLoad == "dashboard")
+                        {
+                            Response.Redirect("Index.cshtml");
+                        }
+
+                        if(pageToLoad == "pipeline")
+                        {
+                            Response.Redirect("pipeline.cshtml");
+                        }
+                    }
+                }
+                else
+                {
+                    //the user has valid credentials but doesn't have access to the dashboard because there is no default role in the users table
+                    response = "You are not authorized for access to the Dashboard";
+                }
+            }
+        }
+
+        catch
+        {
+            //this will occur if a user's credentials are wrong
+            username = "";
+            password = "";
+            response = "Invalid username or password for this domain";
+
+        }
+    }//End of isPost block
+
+    //coming from BI
+    if (v_userKey != "0")
+    {
+
+
+
+
+        HttpCookie myCookie = new HttpCookie("sessionKey");
+        var sessionKey = db.UI_Session_Start(v_userKey);
+        myCookie.Value = sessionKey;
+        myCookie.Expires = DateTime.Now.AddDays(60d);
+        Response.Cookies.Add(myCookie);
+
+
+
+
+        if (pageToLoad == "dashboard")
+        {
+            Response.Redirect("Index.cshtml?BI=true");
+        }
+
+        if (pageToLoad == "pipeline")
+        {
+            Response.Redirect("pipeline.cshtml?BI=true");
+        }
+
+    }
+
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Len Wright">
+
+    <link rel="shortcut icon" href="img/favicon.ico">
+    <title>BI Dashboard</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+    <link href="/css/bootstrap-reset.css" rel="stylesheet">
+
+    <!--Icon-fonts css-->
+    <link href="/css/font-awesome.min.css" rel="stylesheet" /> <!-- font-awesome.css 4.7.0 -->
+    <!-- Custom styles for this template -->
+    <link href="/css/style.css" rel="stylesheet">
+    <link href="/css/helper.css" rel="stylesheet">
+    <link href="/css/style-responsive.css" rel="stylesheet" />
+
+    <!--data tables-->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/fixedheader/3.1.6/css/fixedHeader.dataTables.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.css" />
+
+    <script type="text/javascript" src="https://cdn.datatables.net/v/dt/jq-2.2.4/jszip-2.5.0/dt-1.10.13/b-1.2.4/b-html5-1.2.4/fh-3.1.2/datatables.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/fixedheader/3.1.6/js/dataTables.fixedHeader.min.js"></script>
+
+</head>
+<body>
+
+    <div class="wrapper-page animated fadeInDown">
+        <div class="panel panel-color panel-primary">
+
+            <form id="login" name="login" method="post" role="form" class="form-horizontal text-center">
+                <div class="user-thumb">
+
+                    <img src="~/img/icon-16x6-spc-0.gif" style="margin-top:13px;margin-left:5px;width:25px; height:25px;" />
+                </div>
+                <div class="form-group">
+                    <h3>Welcome to BI Dashboard</h3>
+                    <div class="form-group">
+                        <label for="userName" class="col-xs-3 p-0" style="height:34px;line-height: 34px;margin: 0px -7px 0px 7px;">User Name:</label>
+                        <div class="col-xs-9">
+                            <input class="form-control" type="text" id="userName" name="userName" size="30" maxlength="50" value="@username" title="Sign in with your Ipsos network credentials" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password" class="col-xs-3 p-0" style="height:34px;line-height: 34px;margin: 0px -7px 0px 7px;">Password:</label>
+                        <div class="col-xs-9">
+                            <input class="form-control" type="password" id="password" name="password" size="30" maxlength="50" value="@password" />
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <div class="portlet col-xs-offset-4 col-xs-7 p-0" style="padding-left: 10px;" title="Select domain and/or Remember Me option">
+                            <div class="portlet-heading bg-muted" style="line-height:15px !important; min-height:15px !important;">
+                                <p class="portlet-title" style="font-weight:normal !important">
+                                    <a class="kpiTitle" data-toggle="collapse" href="#loginOptions">
+                                        <span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span>
+                                        <span class="padding">Settings</span>
+                                    </a>
+                                </p>
+                                <div class="clearfix"></div>
+                                <div id="loginOptions" class="panel-collapse collapse">
+                                    <select class="form-control" id="domain" name="domain" size="1">
+                                        <option value="ipsosgroup">Ipsos Group Domain</option>
+                                        <option value="eu">EU Domain</option>
+                                        <option value="bi">BI Authentication</option>
+                                    </select>
+                                    <input class="checkbox-inline p-t-10" type="checkbox" id="remember" name="remember" checked="checked" />
+                                    <label for="remember">Remember me</label>
+
+                                </div>
+                            </div>
+                        </div>
+                        <span class="input-group-btn p-b-10 "> <button type="submit" id="btn-submit" class="btn btn-primary pull-right">Sign In</button> </span>
+                    </div>
+                </div>
+            </form>
+            <p id="response" class="text-center">
+                @response<br />
+            </p>
+        </div>
+    </div>
+
+    <!-- js placed at the end of the document so the pages load faster -->
+    <script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+    <script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+
+
+    <script>
+        $(document).ready(function () {
+
+            if ($('#response').text().trim() != "Sign in with your Ipsos network credentials") {
+                $('#response').css('color', 'red')
+            }
+        });
+
+        $('#btn-submit').click(function () {
+            $('#btn-submit').html('<i class="fa fa-circle-o-notch fa-spin fa-1" style="color:white;font-size:20px"></i>');
+
+        });
+    </script>
+</body>
+</html>

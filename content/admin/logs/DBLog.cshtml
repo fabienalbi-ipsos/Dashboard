@@ -1,0 +1,108 @@
+﻿@{
+    var records = db.UI_LogHits_DB_Get();
+
+    //stats page help (key: 1131)
+    var helpKey = "1131";
+    var help = db.UI_HelpContent_Get(helpKey);
+
+    var isAdmin = false;
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "Admin") { isAdmin = true; }
+
+    if (role != "" && isAdmin == false)
+    {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+    else if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+}
+
+<link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+<link href="/css/bootstrap-reset.css" rel="stylesheet">
+
+<!--Dashboard custom styles-->
+<link href="/css/dashboard.css?random=10" rel="stylesheet" />
+
+<h1 class="page-header" style="margin-left:10px;">Dashboard Daily Stats <small>by role</small></h1>
+
+<div style="width:60%">
+    <table class="table table-hover table-bordered  dashboard-table" style="font-size:10pt">
+        <thead style="font-weight:bold">
+            <tr>  
+                <th class="descriptionRow">Description</th>
+                <th class="descriptionRow">Date</th>
+                <th>Count</th>
+                <th>Percent of Total</th>
+                <th>Average Duration (in seconds)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var record in records)
+            {
+                <tr>
+                    @if (record.UserKey == null)
+                    {
+                        <td class="descriptionRow @record.Class"><a href="../userAdmin/UserLog.cshtml?runDate=@record.RowDescription" target="_blank">@record.RowDescription</a></td>
+                        <td class="descriptionRow @record.Class">@String.Format("{0:dddd, MMMM d, yyyy}", @record.LoginDate) </td>
+                    }
+                    else
+                    {
+                        <td class="descriptionRow @record.Class"><a href="../userAdmin/UserLog.cshtml?userId=@record.UserKey" target="_blank">@record.RowDescription</a></td>
+                        <td class="descriptionRow @record.Class"></td>
+                    }
+                    <td class="@record.Class">@record.PageCount</td>
+                    <td class="@record.Class">@record.PercentOfTotal</td>
+                    <td class="@record.Class">@record.AverageDuration</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="modal fade" id="help-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-help modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header modalHeaderText clientBgColor">
+                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title help-title">@help.HelpTitle</h4>
+            </div>
+            <div class="modal-body">
+                @Html.Raw(help.HelpContentHTML)
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml?helpKey=@helpKey')">Edit</button>
+                <button type="button" class="btn btnHelp btnHelpClient" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+<script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+
+<style>
+    #btn-help {
+        position: fixed;
+        top: 5px;
+        right: 5px;
+    }
+
+    .btn-admin,
+    .btn-admin:hover,
+    .btn-admin:focus {
+        background-color: #1b365d;
+        color: white;
+    }
+
+    #help-modal > .modal-dialog {
+        width: 70%;
+    }
+
+    a {
+        color: #337ab7;
+    }
+</style>

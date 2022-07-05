@@ -1,0 +1,313 @@
+﻿
+ .closeX{
+        color:white !important;
+        font-size:33px;
+        font-weight:700;
+        padding-right:10px;
+        box-shadow:none !important;
+        text-shadow:none !important;
+        opacity:1.0 !important;
+    }
+
+ .modalHeaderText{
+    padding-top:15px !important;
+    padding-left:10px !important;
+    margin-top:10px !important;
+    font-weight: 700;
+    color:white;
+
+ }
+
+
+ .chartSmall{
+     height:330px;
+     width:330px;
+     margin: 0 auto;
+     
+ }
+
+ .chartBig{
+     
+     /*width:100%;
+     height:100%;
+     margin: 0 auto;*/
+     margin: 10px;
+     
+ }
+
+ .clientColor, .innovationColor{
+     color:#1b365d;
+ }
+
+ .financeColor{
+     color:#007681;
+ }
+
+  .peopleColor{
+     color:#71b2b9;
+ }
+
+ .clientBgColor, .innovationBgColor{
+     background-color:#1b365d;
+     border: 1px solid #1b365d;
+ }
+
+ .financeBgColor{
+     background-color:#007681;
+     border: 1px solid #007681;
+ }
+
+  .peopleBgColor{
+     background-color:#71b2b9;
+     border: 1px solid #71b2b9;
+ }
+
+ .wideTable td, th{
+
+     /*font-size:12px;*/
+ }
+
+ .amount{
+     white-space:nowrap;
+ }
+
+ /*used to disable a kpi if there is no data*/
+ .disabled {
+    z-index: 1000;
+    background-color: lightgrey;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+ .columnTitle{
+     /*background-color:#edf0f0;*/
+ }
+
+ .dashboard-table{
+ margin-top: 10px;
+text-align:right;
+}
+
+.dashboard-table th{
+
+    text-align:right;
+}
+
+.dropdownArrow{
+    font-size:8px !important;   /*This is the drop down arrow on nav menu items. Overrides bootstrap default of 15px
+                                    Not using caret because it doesn't show up on ipad*/
+}
+
+
+/*this overrides bootstrap default of 10px*/
+.table thead > tr > th, .table tbody > tr > th, .table tfoot > tr > th, .table thead > tr > td, .table tbody > tr > td, .table tfoot > tr > td {
+    padding: 5px;
+}
+
+.subTotalRow{
+
+    font-weight:700;
+}
+
+.descriptionRow{
+    text-align:left !important;
+}
+
+.table-bordered>tbody>tr>td.NoTopBorderRow{
+    border-top: none;
+}
+
+.table-bordered>tbody>tr>td.NoBottomBorderRow{
+    border-bottom: none;
+}
+
+.kpiTitle {
+    font-weight:700;
+    
+}
+.kpiValue{
+    font-size:14px;
+    font-weight:700;
+}
+
+.kpiGrowth {
+    margin-left: 5px;
+    font-size: 14px;
+    font-weight: 700;
+    display: inline-block;
+    min-width: 50px;
+}
+
+
+.kpiGreen{
+   
+    color:forestgreen;
+
+}
+
+.kpiRed{
+   
+    color:red;
+}
+
+.kpiYellow{
+   
+    color:#f1be48;
+}
+
+.kpiGrey{
+
+    color:#c8c9c7;
+}
+
+.kpiWhite{
+
+    color:white;
+}
+
+.expcol {
+
+    font-size:26px;
+    margin-left:3px;
+    color:#1b365d;
+    cursor:pointer;
+}
+
+.padding{
+    padding-left:10px;
+    padding-right:10px;
+}
+
+
+.text-20{
+    font-size:20px !important;
+}
+
+.btnHelp {
+    color:#333;
+    background-color:#fff;
+    border-color:#ccc
+}
+
+.btnHelpclient:hover,
+.btnHelpinnovation:hover {
+    color:#fff;
+    background-color:#1b365d;
+}
+
+.btnHelpfinance:hover {
+    color:#fff;
+    background-color:#007681;
+}
+
+.btnHelppeople:hover {
+    color:#fff;
+    background-color:#71b2b9;
+}
+
+/*the hamburger button keeps its dark blue background on hover and focus*/
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus {
+    background-color: #1b365d;
+}
+/*allow for extra margin on top when the menu wraps onto two rows*/
+@media (max-width: 1024px) {
+    #landingPage {
+        margin-top: 35px;
+    }
+}
+
+.linkedReports>li>a{
+    white-space:nowrap !important;
+}
+
+.help-title {
+    font-weight: bold;
+}
+
+/*resizes hamburger button for mobile*/ 
+.navbar-toggle .icon-bar {
+    width: 13px;
+    height: 1pt;
+}
+
+.navbar-toggle .icon-bar+.icon-bar {
+    margin-top: 4px;
+}
+
+.navbar-toggle {
+    margin-top:13px;
+    padding: 4.5px 5px;
+}
+
+.descriptionRow {
+    white-space: nowrap;
+}
+
+#menu-left > .dropdown > a {
+    padding-top: 17px;
+    padding-bottom: 17px;
+}
+
+.portlet-heading.bg-muted.enabled {
+    cursor: pointer;
+}
+
+.portlet-heading.bg-muted.enabled:hover,
+.portlet-heading.bg-muted.enabled:active {
+    background-color: #b5b4b4 !important;
+}
+
+.portlet-heading.bg-muted.enabled:hover .portlet-widgets .fa-circle.kpiGrey,
+.portlet-heading.bg-muted.enabled:active .portlet-widgets .fa-circle.kpiGrey {
+    color:  #b5b4b4;
+}
+
+.modal-header {
+    border-radius: 5px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.modal-body > table {
+    width: 100% !important;
+}
+
+.widget-style-1 i {
+    color: white;
+}
+
+.wraper.container-fluid {
+    padding-top:70px;
+}
+
+#portlet-kpiSummary > .portlet-body {
+    padding:10px;
+}
+
+.panel.panel-color.panel-muted {
+    margin-top:15px;
+    border: 1px solid #edf0f0;
+    padding: 10px 5px 5px 5px;
+}
+
+.panel.panel-color.panel-muted > .panel-heading {
+    padding-bottom:5px;
+}
+
+.modal-help {
+    width: 70%;
+}
+
+#group-icon {
+    background-image:url(/img/group.png);
+    background-size: 70px;
+    min-height: 70px;
+    min-width: 70px;
+    margin-bottom: 15px;
+}
+
+.security-table {
+    text-align: left;
+    white-space:nowrap;
+    font-size:11px;
+}

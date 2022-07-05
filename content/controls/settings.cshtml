@@ -1,0 +1,28 @@
+﻿@using System.Xml;
+@{
+    KPIxml xml = new KPIxml();
+    var lastRefresh = "The last refresh was completed on ";
+
+    XmlDocument data = (XmlDocument)HttpContext.Current.Items["kpiData"];
+
+    XmlNodeList settings = data.SelectNodes("/kpidata/row[@DataType='parameter' and @ParameterType !='9' and @ParameterType !='8' and @ParameterType !='10' and @ParameterType !='99' and @ParameterType !='13' and @ParameterType !='14' and @ParameterType !='15']");
+
+    lastRefresh += data.SelectSingleNode("/kpidata/row[@DataType='parameter' and @ParameterType='9']").Attributes["ParameterValueName"].InnerText;
+
+    DateTime now = DateTime.UtcNow.AddHours(1);
+
+}
+
+<div>
+    <ul>
+        @foreach (XmlNode setting in settings)
+        {
+                <li><strong>@db.AttributeIsNull(setting,"ParameterName",""): </strong> @db.AttributeIsNull(setting,"ParameterValueName","")</li>
+            
+        }
+    </ul>
+                <p style="margin:10px 0px 0px 25px">@lastRefresh*</p>
+                <p id="currently" style="margin-left: 25px">It is currently @now.ToString("MMM d yyyy h:mmtt") (UK Time)</p>
+    <br />
+    <p style="margin-left: 25px">* To see the most recent data, refresh by clicking on the BI Business Dashboard button on the navigation bar</p>
+</div>

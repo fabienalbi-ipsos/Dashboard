@@ -1,0 +1,7 @@
+﻿@{
+    var term = Request["term"];
+
+
+    var records = db.UI_GetUserBySearch(term);
+    Json.Write(records, Response.Output);
+}

@@ -1,0 +1,625 @@
+﻿@using System.Xml;
+@using System.Configuration;
+
+@{
+    if (Request["BI"] != "true")
+    {
+        if (Request.Url.Authority == "bidev3.ipsos") { Response.Redirect("https://bidev.ipsos.com"); }
+        else if (Request.Url.Authority == "dashboard-bidev.ipsos.com") { Response.Redirect("https://bidev.ipsos.com"); }
+        else if (Request.Url.Authority == "dashboard-bi.ipsos.com") { Response.Redirect("https://bi.ipsos.com"); }
+        else if (Request.Url.Authority == "bidashboard.ipsos") { Response.Redirect("https://bi.ipsos.com"); }
+        else if (Request.Url.Authority == "dashboard-bitest.ipsos.com") { Response.Redirect("https://bitest.ipsos.com"); }
+    }
+
+    string domain = "bidev";
+    if (Request.Url.Host == "bidashboard.ipsos") { domain = "bi"; }
+    if (Request.Url.Host.Contains("bi.ipsos")) { domain = "bi"; }
+    if (Request.Url.Host.Contains("test")) { domain = "bitest"; }
+
+    String server = ConfigurationManager.AppSettings["LocalServerName"].ToString();
+
+    //start the page log
+    db.UI_PageLoad_Log("0", "Pipeline");
+
+    db.UI_PageLoad_Log("0", "Load XML");
+    string userKey = db.GetUserKey();
+    string key = ((int.Parse(userKey) * 1234) + 5).ToString();
+
+    if (userKey == "" || userKey == "0")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("Default.cshtml");
+    }
+    //get the data as an xml document
+    //string url = Request.Url.Scheme + "://" + Request.Url.Authority;
+    string url = Request.Url.Scheme + "://" + server;
+
+    KPIxml xml = new KPIxml();
+    XmlDocument data = xml.LoadData(userKey, url);
+    db.UI_PageLoad_Log("1", "Load XML");
+
+    //store the xml data into the Items collection, for use by this and other pages 
+    HttpContext.Current.Items["kpiData"] = data;
+
+    //session impersonation - the 'View as' feature
+    Boolean impersonating = false;  //assume not impersonating
+    if (Session["impersonation"] != null)
+    {
+        impersonating = true;
+    }
+
+    // set admin access variables to false by default
+    var isAdmin = false;
+
+    var DashboardHelpTitle = db.UI_HelpTitle_Get("1001");
+    var DashboardNewsTitle = db.UI_HelpTitle_Get("1136");
+    var DashboardBMRFMRHelpTitle = db.UI_HelpTitle_Get("1149");
+
+    //get the date of the last news update
+    XmlNode LastNewsUpdate = data.SelectSingleNode("/kpidata/row[@DataType='LastNewsUpdate' and @ID='1136']");
+    var lastNewsUpdateString = db.AttributeIsNull(LastNewsUpdate, "RowDescription", "");
+
+    //lastNewsUpdateDate is a string, convert to date and then milliseconds
+    DateTime lastNewsUpdateDate = Convert.ToDateTime(lastNewsUpdateString);
+    long lastNewsUpdateDate_ms = (long)(lastNewsUpdateDate - new DateTime(1970, 1, 1)).TotalMilliseconds;
+
+
+    //get the news cookie
+    HttpCookie NewsCookieRequest = System.Web.HttpContext.Current.Request.Cookies["news"];
+    Boolean newArticle = false;
+    long lastSeen = lastNewsUpdateDate_ms;
+    long lastNewsUpdate = lastNewsUpdateDate_ms;
+
+    //check if the user has read the latest news article.
+    if (NewsCookieRequest != null)
+    {//we have a cookie so check the date of the last read article
+        long ms;
+        bool isNumeric = long.TryParse(NewsCookieRequest.Value, out ms);
+        if (isNumeric)
+        {
+            lastSeen = Convert.ToInt64(NewsCookieRequest.Value);
+        }
+        if (lastNewsUpdate > lastSeen) { newArticle = true; } //last news article update is newer than the last seen date, so there is a new article to read
+    }
+    else
+    {//no cookie,so this is a new user or they have cleared their cookies. Assume they haven't read any news, so force the new article flag
+        newArticle = true;
+    }
+
+    //Section Titles
+    var Section0Title = "Pending Proposals";
+    var Section1Title = "Winning Proposals";
+    var Section2Title = "Losing Proposals";
+
+    var defaultScope = "Default Scope";
+
+    //get the user record
+    var userNode = data.SelectSingleNode("/kpidata/row[@DataType='UserRecord']");
+    var scope = data.SelectSingleNode("/kpidata/row[@DataType='parameter' and @ParameterType='2']");
+    var managementreport = db.AttributeIsNull(data.SelectSingleNode("/kpidata/row[@DataType='parameter' and @ParameterType='13']"), "ParameterValue", "");
+    managementreport = managementreport == "" ? db.AttributeIsNull(data.SelectSingleNode("/kpidata/row[@DataType='parameter' and @ParameterType='14']"), "ParameterValue", "") : managementreport;
+
+    //find the user's role
+    var role = "";
+    role = db.AttributeIsNull(userNode, "role", "");
+
+    if (Request.Cookies["role"] == null)
+    {//store the user's role in a cookie for easy lookup 
+        HttpCookie roleCookie = new HttpCookie("role");
+        roleCookie.Value = role;
+        roleCookie.Expires = DateTime.Now.AddDays(60d);
+        Response.Cookies.Add(roleCookie);
+    }
+
+    if (role == "Admin") { isAdmin = true; }
+    //if no role found, send them to the default page to login again
+    if (role == "") { Response.Redirect("Default.cshtml"); }
+
+
+    //get the default scope for this user
+    defaultScope = db.AttributeIsNull(userNode, "DefaultScope_DashboardName", "");
+
+    if (defaultScope == "" || db.AttributeIsNull(scope, "Value", "0") == "0")
+    {
+        //set a message to the user to select a scope
+        //this should not happen since a user should have a default scope in their user record
+        defaultScope = "Select Scope";
+    }
+}
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="BI Pipeline Monitor" content="BI Pipeline Monitor">
+    <link rel="shortcut icon" href="img/favicon-16x16.ico">
+    <title>BI Pipeline Monitor</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet"> <!-- boostrap.css 3.3.5 -->
+    <link href="/css/bootstrap-reset.css" rel="stylesheet">
+    <!--Animation css-->
+    <link href="/css/animate.css" rel="stylesheet">
+    <!--Icon-fonts css-->
+    <link href="/css/font-awesome.min.css" rel="stylesheet" /> <!-- font-awesome.css 4.7.0 -->
+    <link href="/css/ionicons.min.css" rel="stylesheet" /> <!-- ionicons.css 2.0.0 -->
+    
+    <!-- Plugins css -->
+    <link href="assets/modal-effect/css/component.css" rel="stylesheet">
+
+    <!--Dashboard css-->
+    <link href="/css/dashboard-complete.css?random=111" rel="stylesheet" />
+
+   
+  
+
+</head>
+
+<body>
+
+    <!--Main Content Start -->
+    <section class="">
+        <!-- Header -->
+        <div class="container">
+
+            <!-- Static navbar -->
+            <nav class="navbar navbar-default navbar-fixed-top" id="dashboardNavBar">
+                <div class="container-fluid">
+                    <!--Navbar Header Hamburger-->
+                    <div class="navbar-header">
+                        <img id="ipsos-logo" src="~/img/icon-16x6-spc-0.gif" />
+                        <button type="button" class="navbar-toggle collapsed bg-inverse" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                            <span class="sr-only">Toggle navigation</span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                            <span class="icon-bar"></span>
+                        </button>
+                        <ul class="nav navbar-nav hidden-xs padding">
+                            <li><span id="main-help-button" data-toggle="modal" data-target="#HelpDashboardModal" title="BI Dashboard Help" class="glyphicon glyphicon-question-sign text-lg navIcons hidden-xs"></span></li>
+                            <li id="expand-all-button" title="Expand all sections" class="fa fa-plus-circle navIcons hidden-xs" onclick="expand_all('KPI')"></li>
+                            <li id="collapse-all-button" title="Collapse all sections" class="fa fa-minus-circle navIcons hidden-xs" onclick="collapse_all('KPI')"></li>
+                        </ul>
+                        <a class="navbar-brand" onclick="window.location = 'pipeline.cshtml?BI=true'">
+                            <span>
+                                <strong>BI Pipeline Monitor</strong>
+                            </span>
+                        </a>
+                    </div>
+                    <!-- Left side top navbar -->
+                    <div id="navbar" class="navbar-collapse collapse">
+                        <ul id="menu-left" class="nav navbar-nav">
+
+                            <li class="dropdown">
+                                <a id="tree-link" data-toggle="modal" class="dropdown-toggle" onclick="GetTree(false)">
+                                    <span id="btnScope" title="Scope" class="text-inverse" data-scope="@defaultScope">
+                                        @defaultScope
+                                    </span>
+                                    <span class="glyphicon glyphicon-triangle-bottom dropdownArrow text-inverse"></span>
+                                </a>
+                            </li>
+                            @RenderPage("~/content/controls/year.cshtml","pipeline")
+                            @RenderPage("~/content/controls/periods.cshtml","pipeline")
+                            @RenderPage("~/content/controls/currencies.cshtml","pipeline")
+                            @RenderPage("~/content/controls/rateTypes.cshtml","pipeline")
+                            @RenderPage("~/content/controls/rounding.cshtml","pipeline")
+                        </ul>
+
+
+                        <!-- End right navbar -->
+                    </div><!--/.nav-collapse -->
+
+                </div><!--/.container-fluid -->
+            </nav>
+        </div> <!-- /container -->
+        <!-- Header Ends -->
+        <!-- Page Content Start -->
+        <div id="content" class="wraper container-fluid">
+            <div id="treeContent"></div>
+            <div class="row">
+
+                <!--Section 0 Pending proposals Page-->
+                <div class="col-lg-12">
+                    <div id="pipelinesection" class="portlet">
+                        <div class="portlet-heading bg-primary portlet-section" data-toggle="collapse" data-parent="#accordion1" onclick="GoToSection('portlet-pending');">
+                            <h3 class="portlet-section-title">
+                                <span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span><span class="padding">@Section0Title</span>
+                            </h3>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div id="portlet-pending" class="panel-collapse collapse">
+                            <div class="portlet-body">
+                                <div class="row">
+                                    @RenderPage("~/content/Pipeline/Pending.cshtml")
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Landing -->
+                <!-- Section 1 KPIs (winning) -->
+                <div class="col-lg-12">
+                    <div class="portlet">
+                        <div class="portlet-heading bg-inverse portlet-section" data-toggle="collapse" data-parent="#accordion1" onclick="GoToSection('portlet-winning');">
+
+                            <h3 class="portlet-section-title">
+                                <span class="glyphicon glyphicon-triangle-bottom dropdownArrow"></span><span class="padding">@Section1Title</span><img id="client-icon" src="img/Target.png" />
+                            </h3>
+
+                            <div class="clearfix"></div>
+                        </div>
+                        <div id="portlet-winning" class="panel-collapse collapse">
+                            <div class="portlet-body">
+
+                                <div class="row" style="width:100%">
+                                    @RenderPage("~/content/Pipeline/Winning.cshtml")
+                                </div> <!-- End top row -->
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End Client -->
+
+
+            </div> <!-- End row -->
+            <!-- Bottom row -->
+            <div class="row">
+                <input id="userKey" name="userKey" hidden="hidden" value="@userKey" />
+
+                <!-- Dashboard Help modal -->
+                <div class="modal fade" id="HelpDashboardModal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-help" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header modalHeaderText bg-inverse">
+                                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title help-title" id="myModalLabel">@DashboardHelpTitle</h4>
+                            </div>
+                            <div class="modal-body">
+                            </div>
+                            <div class="modal-footer">
+                                @if (isAdmin == true && !impersonating)
+                                {
+                                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="window.open('content/helpEditor/helpEditor.cshtml?helpKey=1001')">Edit</button>
+                                }
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--News modal-->
+                <div class="modal fade" id="DashboardNewsModal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog modal-help" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header modalHeaderText bg-inverse">
+                                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title help-title" id="myModalLabel">@DashboardNewsTitle</h4>
+                            </div>
+                            <div class="modal-body">
+                            </div>
+                            <div class="modal-footer">
+                                @if (isAdmin == true && !impersonating)
+                                {
+                                    <button type="button" class="btn btn-default" data-dismiss="modal" onclick="window.open('content/helpEditor/helpEditor.cshtml?helpKey=1136')">Edit</button>
+                                }
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--User Settings modal-->
+                <div class="modal fade" id="settings" tabindex="-1" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header modalHeaderText clientBgColor">
+                                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title help-title">Settings</h4>
+                            </div>
+                            <div class="modal-body">
+                                @RenderPage("~/content/controls/settings.cshtml")
+                            </div>
+                            <div class="modal-footer">
+                                @if (isAdmin == true && !impersonating)
+                                {
+                                    <a class="btn btn-default" role="button" data-dismiss="modal" onclick="window.open('/content/admin/userAdmin/userAdmin.cshtml', '_blank')">Admin</a>
+                                    <a class="btn btn-default" role="button" data-dismiss="modal" onclick="window.open('/content/helpEditor/helpEditor.cshtml', '_blank')">Help Editor</a>
+                                }
+
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!--Print Export modal-->
+                <div class="modal fade" id="export" tabindex="-1" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header modalHeaderText clientBgColor">
+                                <button type="button" class="close closeX" data-dismiss="modal" aria-label="Close"><span class="closeX" span aria-hidden="true">&times;</span></button>
+                                <h4 class="modal-title help-title" id="myModalLabel">Export</h4>
+                            </div>
+                            <div id="export-modal-body" class="modal-body">
+                                <span id="button-pdf"><a class="btn btn-default disabled" role="button" data-dismiss="modal" href="javascript:void(0);" onclick="javascript:exportPDF()"><i class="fa fa-spin fa-circle-o-notch"></i> Export to PDF</a></span>
+                                <span id="button-excel"><a class="btn btn-default" role="button" data-dismiss="modal" href="javascript:void(0);" onclick="javascript:exportExcel()"><i class="fa fa-file-excel-o"></i> Export to Excel</a></span>
+                                @if (managementreport.Contains("BMR_"))
+                                {
+                                    <hr />
+                                    <span id="button-BMR"><a class="btn btn-default" role="button" data-dismiss="modal" onclick="window.open('https://' + 'reports-@domain' + '.ipsos.com/Excel_BMR.cshtml?Key=' + @key + '&reportType=@managementreport', '_blank')"><i class="fa fa-file"></i> Export BMR</a></span>
+                                    if (managementreport.Contains("BMR_CCM"))
+                                    {
+                                        <span id="button-FMR"><a class="btn btn-default" role="button" data-dismiss="modal" onclick="window.open('https://' + 'reports-@domain' + '.ipsos.com/Excel_FMR.cshtml?Key=' + @key + '&reportType=FMR_Mgt', '_blank')"><i class="fa fa-file-o"></i> Export FMR</a></span>
+                                    }
+                                    <span id="BMR-FMR-help" title="BMR/FMR Help" data-toggle="modal" data-target="#export" class="glyphicon glyphicon-question-sign text-lg hidden-xs" onclick="javascript:openHelp()"></span>
+                                }
+                                else if (managementreport.Contains("FMR_Legal"))
+                                {
+                                    <hr />
+                                    <span id="button-FMR"><a class="btn btn-default" role="button" data-dismiss="modal" onclick="window.open('https://' + 'reports-@domain' + '.ipsos.com/Excel_FMR.cshtml?Key=' + @key + '&reportType=@managementreport', '_blank')"><i class="fa fa-file-o"></i> Export FMR</a></span>
+                                    <span id="BMR-FMR-help" title="BMR/FMR Help" data-toggle="modal" data-target="#export" class="glyphicon glyphicon-question-sign text-lg hidden-xs" onclick="javascript:openHelp()"></span>
+                                }
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div> <!-- End bottom row -->
+        </div> <!-- End wrapper -->
+        <!-- Page Content Ends -->
+        <!-- ================== -->
+
+    </section>
+    <!-- Main Content Ends -->
+
+    <script>
+        //this code will capture a javascript message
+        window.onerror = function (errorMsg, url, lineNumber) {
+
+            //Log the error in the database, and send a mail to the dev's
+            var errorMessage = 'Error: ' + errorMsg + ' Script: ' + url + ' Line: ' + lineNumber;
+            var JavaScript_Log = "../content/controls/JavascriptError_Log?errorMessage=" + errorMessage;
+            $.post(JavaScript_Log, function () {
+
+            });
+        }
+
+    </script>
+
+    <!-- Main Dashboard JS File -->
+    <script src="/js/jquery-1.10.2.min.js"></script> <!-- jquery.js 1.10.2 -->
+    <script src="/js/bootstrap.min.js"></script> <!-- boostrap.js 3.3.5 -->
+
+    <script src="/js/wow.min.js"></script> <!-- WOW 1.1.2 -->
+
+    <!-- highcharts 4.2.5 -->
+    <script src="/js/highcharts.js"></script>
+    <script src="/js/data.js"></script>
+    <script src="/js/exporting.js"></script>
+    <script src="/js/app_functions.js?random=3140"></script>
+
+    <script src="/js/jquery.app.js"></script>
+    <script src="/js/chart.js?random=19"></script>
+
+
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-html5-1.6.1/fh-3.1.6/datatables.min.css" />
+
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs/jszip-2.5.0/dt-1.10.20/b-1.6.1/b-html5-1.6.1/fh-3.1.6/datatables.min.js"></script>
+
+
+
+    <script>
+
+ function GetTree(isInit) {
+    var waiting = false;
+    if ($("#treeContent").html() != "") {
+        $("#treeModal").modal('toggle');
+    }
+    else { //the tree content is not loaded yet
+        $('#tree-link').on('click', function () { // if the user click on the tree link before it is loaded a loading spinned is displayed
+            waiting = true;
+            $("#btnScope").html('<i class="fa fa-circle-o-notch fa-spin pull-left" style="font-size:16px;color:black;margin-right:5px;margin-top:2px;"></i>Loading...')
+        });
+    }
+
+    if (isInit) {
+        $.ajax({
+            url: "content/controls/trees.cshtml",
+            cache: false,
+            dataType: "html",
+            success: function (data) {
+                $("#treeContent").html(data).promise().done(function () {
+                    if (waiting) {
+                        $("#treeModal").modal('toggle');
+                    }
+                    $("#btnScope").html("@defaultScope");
+
+                    $('#tree-link').on('click', function () { // the tree is now loaded so we no longer display a spinner on click
+                        $("#btnScope").html("@defaultScope");
+                    });//close treelink
+                });//close treecontent
+            }//close success
+
+        }); //close ajax
+        }//close isInit
+    }//close the function
+
+ // A $( document ).ready() block.
+        $(document).ready(function () {
+            //Log the time it took to load the page in the PageLog table
+            var PageLog = "../content/controls/PageLog?parameterType=1&PageName=Pipeline";
+            $.post(PageLog, function () { });
+            var PageLog = "../content/controls/PageLog?parameterType=0&PageName=Ajax";
+            $.post(PageLog, function () { });
+            //show the log-off button if the dashboard is not inside the BI frame
+            if (self == top) {
+                $('#log-off-button').removeClass('hidden');
+            }
+            var False = false;
+            var True = true;
+
+            //disable headlines if not admin
+            $('#portlet-pending').slideDown(1500, function () { $('#portlet-pending').addClass("in").removeAttr('style'); });
+
+            //hide future periods from parameters
+            if (parseInt($('#selectedYear').text()) == new Date().getFullYear()) {
+                $('#periodsDropDown > li > a').each(function () {
+                    if ($(this).attr('id') - 1 > new Date().getMonth()) {
+                        $(this).css({ 'display': 'none' });
+                    }
+                })
+            };
+
+            //check what scope the user has checked
+            var selectedScope = $("input:checked").text();
+            $("#selected").text(selectedScope);
+
+            setTimeout(function(){ //wait for the offline graphs to be created before enabling the pdf feature
+                $('#button-pdf > a').removeClass("disabled").html("<i class='fa fa-file-pdf-o'></i>  Export to PDF");
+            }, 10000);
+
+          
+
+            // hide colums on mobile view (look at table headers with the 'hidden-xs' class and add it to the corresponding tbody cells)
+            $.each($('thead > tr > th'), function () {
+                if ($(this).hasClass('hidden-xs')) {
+                    var idx = $(this).index();
+                    var rows = $(this).closest('table').find('tbody').children('tr')
+                    $.each($(rows), function () {
+                        $(this).find('td').eq(idx).addClass('hidden-xs');
+                    });
+                }
+            });
+
+            var notificationsCount = $('#notifications-list > li').size() - 1;
+            $('#notifications-badge > span').text(notificationsCount);
+            if (notificationsCount > 1) { $('#notifications-badge').prop('title', 'You have ' + notificationsCount + ' alerts'); }
+            else if (notificationsCount == 1) { $('#notifications-badge').prop('title', 'You have one alert'); }
+
+            //load BI help and news
+            var dbHelp = "/img/help/help_1001.html" +'?_=' + (new Date()).getTime();
+            var dbNews = "/img/help/help_1136.html" + '?_=' + (new Date()).getTime();
+            var dbBMRFMRHelp = "/img/help/help_1149.html" + '?_=' + (new Date()).getTime();
+            
+            //load dashboad help content
+            $("#HelpDashboardModal .modal-body").load(dbHelp);
+
+            //load news content
+            $("#DashboardNewsModal .modal-body").load(dbNews);
+
+            //load BMR / FMR help content
+            $("#HelpBMRFMRModal .modal-body").load(dbBMRFMRHelp);
+
+            $('#landing h2').each(function () {
+                if ($(this).text() == "N/A") { $(this).parent('div').addClass("disabled") }
+            })
+
+            GetTree(true);
+
+            //build the offline charts for use in the pdf
+           
+            var PageLog = "../content/controls/PageLog?parameterType=1&PageName=Ajax";
+            $.post(PageLog, function () {});
+        }); //end document.ready
+
+        $(window).on('resize', function() {resizeTable()});
+
+        $('#messages-badge').click(function() {
+            $('#messages-badge > span').remove();
+            var now = new Date();
+
+            setCookie('news',now.getTime(),60)
+            $('#messages-badge').focusout();
+        })
+
+        $('#DashboardNewsModal').on('shown.bs.modal', function(e){
+            $('#messages-badge').one('focus', function(e){$(this).blur();});
+        });
+
+        $('#stop-impersonation').click(function(){
+            $.post("/content/admin/userAdmin/setImpersonation.cshtml?userKey=0", function () {
+                window.location = "/content/admin/userAdmin/userAdmin.cshtml?userID=" + $('#userKey').val();
+            });
+        });
+
+        function exportPDF() {
+            var path = "https://@server";
+            path = path.concat("/content/controls/pdf.cshtml");
+
+            console.log(path)
+            window.open(path, "_blank");
+        }
+
+        function exportExcel() {
+            window.open("/content/controls/exportToExcel.cshtml?KPIKey=All", "_blank");
+        }
+
+        $('#settings').on('shown.bs.modal', function () { //update 'it is currently...' line in settings panel on opening
+            $('#currently').load("content/controls/currentTime.cshtml" +'?_=' + (new Date()).getTime());
+        });
+
+        $('.linkedReports > li > a').click(function(){
+            var ActivityName = $(this).text().replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Linked Reports&ActivityName=" + ActivityName)
+        })
+
+        $('.widget-style-1').click(function(){
+            var ActivityName = $(this).find('a').text().replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Headlines&ActivityName=" + ActivityName)
+        })
+
+        $('button.show-chart').one('click', function(){
+            var ActivityName = $(this).closest('.portlet').find('h3.portlet-title span.padding').text().replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Chart&ActivityName=" + ActivityName)
+        })
+
+        $('div.portlet-heading.bg-muted.enabled').one('click', function(){
+            var ActivityName = $(this).find('span.padding').text().replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=KPI&ActivityName=" + ActivityName)
+        })
+
+        $('div.portlet-section').one('click', function(){
+            var ActivityName = $(this).find('span.padding').text().replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Section&ActivityName=" + ActivityName)
+        })
+
+        $('.highcharts-menu-item').click(function(){
+            var ActivityName = $(this).closest('.highcharts-container').find('.highcharts-title').text().replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Export Chart&ActivityName=" + ActivityName)
+        })
+
+        $('.glyphicon-question-sign').click(function(){
+            var ActivityName = $(this).attr('title').replace('&', 'and');
+            $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Help&ActivityName=" + ActivityName)
+        })
+        
+        $('#button-pdf').click(function(){$.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=Export to PDF")})
+        $('#button-excel').click(function () { $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=Export to Excel") })
+        $('#button-BMR').click(function () { $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=BMR Export") })
+        $('#button-FMR').click(function () { $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=FMR Export") })
+        $('#button-excel').click(function () { $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=Export to Excel") })
+        $('#notifications-badge').click(function(){$.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=Alerts")})
+        $('#messages-badge').click(function(){$.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=Messages")})
+        $('#settings-button').click(function(){$.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Features&ActivityName=Settings")})
+        $('.navbar-brand').click(function(){$.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Navigation&ActivityName=Dashboard Reload")})
+        $('#expand-all-button').click(function(){$.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Navigation&ActivityName=Expand All")})
+        $('#collapse-all-button').click(function () { $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Navigation&ActivityName=Collapse All") })
+
+        
+        function openHelp() {
+            $('#export').one('hidden.bs.modal', function () {
+                $("#HelpBMRFMRModal").modal("show",
+                    function () { $.post("/content/controls/UserActivityLog_Set.cshtml?ActivityType=Help&ActivityName=BMR/FMR Help"); }
+                );
+            });
+        };
+
+
+    </script>
+
+</body>
+</html>

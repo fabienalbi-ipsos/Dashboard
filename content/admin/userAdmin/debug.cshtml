@@ -1,0 +1,45 @@
+﻿
+@using System.Xml;
+
+@{
+    //prevent access to non-admin users
+    var role = Request.Cookies["role"] != null ? Request.Cookies["role"].Value.ToString() : "";
+    if (role == "")
+    {
+        //user is not logged in, so take them to the login screen
+        Response.Redirect("~/Default.cshtml");
+    }
+    else if (role != "Admin") {
+        //if the user is not an admin she can't access this page and gets redirected to the login page
+        Response.Redirect("~/Default.cshtml?status=notauthorized");
+    }
+
+    string userKey = Request["userKey"];
+
+    if (userKey == null || userKey == "") { userKey = db.GetUserKey(); }
+
+    KPIxml xml = new KPIxml();
+    string url = Request.Url.Scheme + "://" + Request.Url.Authority;
+    XmlDocument data = xml.LoadData(userKey, url);
+    XmlNodeList rows = data.SelectNodes("/kpidata/row");
+}
+
+
+<head >
+    <style>
+        *{
+            font-family:'Courier New';
+            font-size: 10pt;
+            
+        }
+    </style>
+</head>
+    <body>
+       @foreach (XmlNode row in rows)
+       {
+        <pre>@row.OuterXml</pre>
+       }
+    </body>
+
+
+
